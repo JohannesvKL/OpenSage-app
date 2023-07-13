@@ -9,7 +9,7 @@
 
 FROM ubuntu:22.04 AS stage1
 ARG OPENMS_REPO=https://github.com/OpenMS/OpenMS.git
-ARG OPENMS_BRANCH=develop
+ARG OPENMS_BRANCH=feature/NuXL
 ARG PORT=8501
 
 # Step 1: set up a sane build system
@@ -28,17 +28,28 @@ RUN wget -q \
 RUN mamba --version
 
 # Step 2: get an up-to date cmake (HEREDOC needs DOCKER_BUILDKIT=1 enabled or build with "docker buildx")
-RUN <<-EOF
-    cmake_ubuntu_version=$(lsb_release -cs)
-    if ! wget -q --method=HEAD "https://apt.kitware.com/ubuntu/dists/$cmake_ubuntu_version/Release"; then
-      bash -c "$(wget -O - https://apt.kitware.com/kitware-archive.sh)"
-    else
-      wget -qO - https://apt.kitware.com/kitware-archive.sh | bash -s -- --release $cmake_ubuntu_version
-    fi
-    apt-get -y update
+RUN apt-get -y update && \
+    apt-get install -y lsb-release wget && \
+    export CMAKE_UBUNTU_VERSION=$(grep -oP 'UBUNTU_CODENAME=\K\w+' /etc/os-release) && \
+    if ! wget -q --method=HEAD "https://apt.kitware.com/ubuntu/dists/$CMAKE_UBUNTU_VERSION/Release"; then \
+      bash -c "$(wget -O - https://apt.kitware.com/kitware-archive.sh)"; \
+    else \
+      wget -qO - https://apt.kitware.com/kitware-archive.sh | bash -s -- --release $CMAKE_UBUNTU_VERSION; \
+    fi && \
+    apt-get -y update && \
     apt-get install -y cmake
-EOF
-
+ 
+# RUN <<-EOF
+#    cmake_ubuntu_version=$(lsb_release -cs)
+#    if ! wget -q --method=HEAD "https://apt.kitware.com/ubuntu/dists/$cmake_ubuntu_version/Release"; then
+#      bash -c "$(wget -O - https://apt.kitware.com/kitware-archive.sh)"
+#    else
+#      wget -qO - https://apt.kitware.com/kitware-archive.sh | bash -s -- --release $cmake_ubuntu_version
+#    fi
+#    apt-get -y update
+#    apt-get install -y cmake
+#EOF  
+    
 # Step 3: dependencies for contrib etc.
 RUN apt-get install -y --no-install-recommends --no-install-suggests libsvm-dev libglpk-dev libzip-dev zlib1g-dev libxerces-c-dev libbz2-dev libomp-dev libhdf5-dev
 RUN apt-get install -y --no-install-recommends --no-install-suggests libboost-date-time1.74-dev \
