@@ -4,6 +4,9 @@
 # build image and give it a name (here: streamlitapp) with: docker build --no-cache -t streamlitnuxlapp:latest . 2>&1 | tee build.log 
 # check if image was build: docker image ls
 # run container: docker run -p 8501:8501 streamlitnuxlapp:latest
+####### docker-compose up --build
+####### http://localhost:8501 (to access the app)
+####### docker-compose exec streamlit /bin/bash (to run tools inside container)
 # debug container after build (comment out ENTRYPOINT) and run container with interactive /bin/bash shell
 # prune unused images/etc. to free disc space (e.g. might be needed on gitpod). Use with care.: docker system prune --all --force
 
