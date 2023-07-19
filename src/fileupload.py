@@ -90,7 +90,7 @@ def load_example_mzML_files() -> None:
     for f in Path("example-data", "mzML").glob("*.mzML"):
         shutil.copy(f, mzML_dir)
         add_to_selected_mzML(f.stem)
-    st.success("Example mzML files loaded!")
+    #st.success("Example mzML files loaded!")
 
 
 def remove_selected_mzML_files(to_remove: list[str]) -> None:
@@ -185,7 +185,7 @@ def load_example_fasta_files() -> None:
     for f in Path("example-data", "fasta").glob("*.fasta"):
         shutil.copy(f, fasta_dir)
         add_to_selected_fasta(f.stem)
-    st.success("Example fasta files loaded!")
+    #st.success("Example fasta files loaded!")
 
 @st.cache_data
 def copy_local_fasta_files_from_directory(local_fasta_directory: str) -> None:

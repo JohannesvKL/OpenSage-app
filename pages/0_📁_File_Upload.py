@@ -8,8 +8,6 @@ from src.fileupload import *
 
 params = page_setup()
 
-print(params)
-
 # Make sure "selected-mzML-files" is in session state
 if "selected-mzML-files" not in st.session_state:
     st.session_state["selected-mzML-files"] = params["selected-mzML-files"]
@@ -19,7 +17,7 @@ if "selected-fasta-files" not in st.session_state:
 
 st.title("File Upload")
 
-tabs = ["mzML Upload", "Example mzML", "Fasta upload","Example fasta"]
+tabs = ["mzML files", "Fasta files"]
 if st.session_state.location == "local":
     tabs.append("Files from local folder")
 
@@ -28,22 +26,20 @@ tabs = st.tabs(tabs)
 with tabs[0]:
     with st.form("mzML-upload", clear_on_submit=True):
         files = st.file_uploader(
-            "mzML files", accept_multiple_files=(st.session_state.location == "local"))
+            "mzML files", accept_multiple_files=(st.session_state.location == "local"), type=['.mzML', '.raw'], help="Input file (Valid formats: 'mzML', 'raw') ")
         cols = st.columns(3)
         if cols[1].form_submit_button("Add files to workspace", type="primary"):
             save_uploaded_mzML(files)
+            #load_example_mzML_files()
 
-# Example mzML files
-with tabs[1]:
-    st.markdown("Short information text about the example data.")
-    cols = st.columns(3)
-    if cols[1].button("Load Example Data", type="primary"):
-        load_example_mzML_files()
+    
+    load_example_mzML_files()
         
     # Local file upload option: via directory path
     if st.session_state.location == "local":
         with tabs[2]:
             # with st.form("local-file-upload"):
+            st.markdown("Short information text about the example data.")
             local_mzML_dir = st.text_input(
                 "path to folder with mzML files")
             # raw string for file paths
@@ -61,7 +57,7 @@ with tabs[1]:
         show_table(df)
         v_space(1)
         # Remove files
-        with st.expander("🗑️ Remove mzML files"):
+        with st.expander("🗑️ Remove uploaded mzML files"):
             to_remove = st.multiselect("select mzML files",
                                     options=[f.stem for f in sorted(mzML_dir.iterdir())])
             c1, c2 = st.columns(2)
@@ -72,23 +68,16 @@ with tabs[1]:
             if c1.button("⚠️ Remove **all**", disabled=not any(mzML_dir.iterdir())):
                 remove_all_mzML_files()
                 st.experimental_rerun()
+                #load_example_mzML_files()
 
-with tabs[2]:
+with tabs[1]:
     with st.form("fasta-upload", clear_on_submit=True):
-        file = st.file_uploader("fasta file")
+        file = st.file_uploader("fasta file", type=['.fasta'], help = "The protein database used for identification. (valid formats: 'fasta')")
         cols = st.columns(3)
         if cols[1].form_submit_button("Add fasta to workspace", type="primary"):
             save_uploaded_fasta(file)
 
-
-
-# Example Fasta files
-with tabs[3]:
-    st.markdown("Short information text about the example data.")
-    cols = st.columns(3)
-    if cols[1].button("Load fasta files", type="primary"):
-        load_example_fasta_files()
-        
+    load_example_fasta_files()
     # Local file upload option: via directory path
     if st.session_state.location == "local":
         with tabs[2]:
@@ -110,7 +99,7 @@ with tabs[3]:
         show_table(df)
         v_space(1)
         # Remove files
-        with st.expander("🗑️ Remove fasta files"):
+        with st.expander("🗑️ Remove uploaded fasta files"):
             to_remove = st.multiselect("select fasta files",
                                     options=[f.stem for f in sorted(fasta_dir.iterdir())])
             c1, c2 = st.columns(2)
@@ -121,4 +110,6 @@ with tabs[3]:
             if c1.button("⚠️ Remove **all** from workspace", disabled=not any(fasta_dir.iterdir())):
                 remove_all_fasta_files()
                 st.experimental_rerun()
+
+        
 save_params(params)
