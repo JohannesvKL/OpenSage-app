@@ -137,6 +137,12 @@ def page_setup(page: str = "") -> dict[str, Any]:
     st.session_state.workspace.mkdir(parents=True, exist_ok=True)
     Path(st.session_state.workspace,
          "mzML-files").mkdir(parents=True, exist_ok=True)
+    
+    Path(st.session_state.workspace,
+         "fasta-files").mkdir(parents=True, exist_ok=True)
+    
+    Path(st.session_state.workspace,
+         "result-files").mkdir(parents=True, exist_ok=True)
 
     # Load parameters from the parameter file
     params = load_params()
