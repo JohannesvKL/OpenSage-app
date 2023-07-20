@@ -15,7 +15,7 @@ if "selected-mzML-files" not in st.session_state:
 if "selected-fasta-files" not in st.session_state:
     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
 
-st.title("File Upload")
+st.title("📂 File Upload")
 
 tabs = ["mzML files", "Fasta files"]
 if st.session_state.location == "local":
