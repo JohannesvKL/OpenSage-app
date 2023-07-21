@@ -365,3 +365,4 @@ ERRORS = {
     "workflow": "Something went wrong during workflow execution.",
     "visualization": "Something went wrong during visualization of results.",
 }
+

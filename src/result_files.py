@@ -166,3 +166,14 @@ def download_selected_result_files(to_download: list[str], link_name: str) -> No
     b64_zip_content = create_zip_and_get_base64(file_paths)
     href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="selected_files.zip">{link_name}</a>'
     st.markdown(href, unsafe_allow_html=True)
+
+
+###################################
+def remove_and_get_unique_elements(input_list):
+    # Remove strings containing "_proteins0.0100_XLs.tsv" and "_0.0100_XLs.idXML"
+    filtered_list = [item for item in input_list if "_proteins0.0100_XLs.tsv" not in item or "_0.0100_XLs.idXML" not in item]
+
+    # Return the final unique elements
+    unique_elements = list(set(filtered_list))
+
+    return unique_elements
