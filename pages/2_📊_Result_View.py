@@ -1,7 +1,5 @@
 import streamlit as st
-
 from src.common import *
-
 from src.result_files import *
 
 params = page_setup()
@@ -57,6 +55,7 @@ with tabs[0]:
                 download_selected_result_files(to_download, "selected_result_files")
                 #st.experimental_rerun()
 
+            ### afraid if there are many files in workspace? should be removed?
             if c1.button("⚠️ Download **all**", disabled=not any(result_dir.iterdir())):
                 b64_zip_content = create_zip_and_get_base64()
                 href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="all_result_files.zip">Download All Files</a>'
@@ -66,31 +65,30 @@ with tabs[1]:
 
     session_file = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir()]
     #st.write("all files in result_folder: ", session_files)
-    
     fdr_list = [string for string in session_files if "0.0100_XLs" in string]
-    #st.write("1% FDR files: ",fdr_list)
+    
+    #check if perc base files results
+    #perc_exec = any("_perc_" in string for string in session_file)
 
+    #Take the protocol results which contain both PSMs/PRTs file available in workspace
     unique_protocol_list = set([string.replace("_proteins0.0100_XLs.tsv", '').replace("_0.0100_XLs.idXML", '') for string in fdr_list])
-    #st.write("Unique_protocol",unique_protocol_list)
 
     final_protocols = [i for i in unique_protocol_list if i+"_proteins0.0100_XLs.tsv" in fdr_list and i+"_0.0100_XLs.idXML" in fdr_list]
-    #st.write("contain both protein PSMs", final_protocols)
+    #st.write("contain both protein PSMs", final_protocols)s
 
-    selected_file = st.selectbox(
-    "choose a currently protocol file to view",
-    final_protocols)
+    selected_file = st.selectbox("choose a currently protocol file to view",final_protocols)
 
+    tabs_ = st.tabs(["CSMs", "Proteins"])
     if selected_file:
-        tabs = st.sidebar.tabs(["CSMs", "Proteins"])
-        with tabs[0]:
-            csm_container = st.container()
-            with csm_container:
-                st.write("Table of 1% FDR CSMs")
+        with tabs_[0]:
+            st.write("Table of 1% FDR CSMs")
+            CSM_= readAndProcessIdXML(selected_file+"_0.0100_XLs.idXML")
+            show_table(CSM_)
 
-        with tabs[1]:
-            protein_container = st.container()
-            with protein_container:
-                st.write("Table of PRTs at 1% CSM FDR")
+        with tabs_[1]:
+            st.write("Table of PRTs at 1% CSM FDR")
+            PRTs_= readAndProcessIdXML(selected_file+"_proteins0.0100_XLs.idXML")
+            show_table(PRTs_)
 
 
 # At the end of each page, always save parameters (including any changes via widgets with key)

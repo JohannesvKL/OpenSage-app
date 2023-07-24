@@ -168,10 +168,25 @@ if result_dict["success"]:
         log_file.write(result_dict["log"])
 
     All_files = [f.name for f in sorted(result_dir.iterdir())]
+
+    ### just show and download the identification_files of XLs PSMs/PRTs 
+    perc_exec = any("_perc_" in string for string in All_files)
+    if perc_exec :
+        identification_files = [string for string in All_files if "_perc_0.0100_XLs"  in string or "_perc_0.1000_XLs" in string or "_perc_1.0000_XLs" in string or "_perc_proteins" in string]
+    else:
+        identification_files = [string for string in All_files if "_XLs"  in string or "_proteins" in string]
+ 
+    ### file withour FDR control, we used in rescoring paper
+    identification_files.append(f"{protocol_name}.idXML")
+    st.write("identification_files", identification_files)
+
+    ##showing all current files
     current_analysis_files = [s for s in All_files if protocol_name in s]
     df = pd.DataFrame({"output files ": current_analysis_files})
     show_table(df)
-    download_selected_result_files(current_analysis_files, f":arrow_down: {protocol_name}_out_files")
+
+    ## download identification files of XLS PSMs/PRTs
+    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
     st.info(result_dict["log"])
 
 
