@@ -11,7 +11,7 @@ params = page_setup()
 st.title("⚙️ Run Analysis")
 
 if "selected-mzML-files" not in st.session_state:
-    st.session_state["selected-mzML-files"] = params["selected-mzML-files"]
+    st.session_state["selected-mzML-files"] = params.get("selected-mzML-files", [])
 
 if "selected-fasta-files" not in st.session_state:
     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
@@ -178,7 +178,7 @@ if result_dict["success"]:
  
     ### file withour FDR control, we used in rescoring paper
     identification_files.append(f"{protocol_name}.idXML")
-    st.write("identification_files", identification_files)
+    #st.write("identification_files", identification_files)
 
     ##showing all current files
     current_analysis_files = [s for s in All_files if protocol_name in s]
@@ -186,7 +186,7 @@ if result_dict["success"]:
     show_table(df)
 
     ## download identification files of XLS PSMs/PRTs
-    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
+    #download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
     st.info(result_dict["log"])
 
 

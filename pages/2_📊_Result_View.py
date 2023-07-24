@@ -36,10 +36,12 @@ with tabs[0]:
             to_remove = st.multiselect("select result files", options=Final_list)
 
             c1, c2 = st.columns(2)
+            ### remove selected files from workspace
             if c2.button("Remove **selected**", type="primary", disabled=not any(to_remove)):
                 remove_selected_result_files(to_remove)
                 st.experimental_rerun() 
 
+            ### remove all files from workspace
             if c1.button("⚠️ Remove **all**", disabled=not any(result_dir.iterdir())):
                 remove_all_result_files() 
                 st.experimental_rerun() 
@@ -55,7 +57,7 @@ with tabs[0]:
                 download_selected_result_files(to_download, "selected_result_files")
                 #st.experimental_rerun()
 
-            ### afraid if there are many files in workspace? should be removed?
+            ### afraid if there are many files in workspace? should we removed this option?
             if c1.button("⚠️ Download **all**", disabled=not any(result_dir.iterdir())):
                 b64_zip_content = create_zip_and_get_base64()
                 href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="all_result_files.zip">Download All Files</a>'
@@ -78,18 +80,28 @@ with tabs[1]:
 
     selected_file = st.selectbox("choose a currently protocol file to view",final_protocols)
 
+    workspace_path = Path(st.session_state.workspace)
+
     tabs_ = st.tabs(["CSMs", "Proteins"])
     if selected_file:
         with tabs_[0]:
-            st.write("Table of 1% FDR CSMs")
-            CSM_= readAndProcessIdXML(selected_file+"_0.0100_XLs.idXML")
+            st.write("Table of 1% XL FDR CSMs")
+            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
+            CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
             show_table(CSM_)
 
         with tabs_[1]:
-            st.write("Table of PRTs at 1% CSM FDR")
-            PRTs_= readAndProcessIdXML(selected_file+"_proteins0.0100_XLs.idXML")
-            show_table(PRTs_)
+            st.write("Table of 1% XL FDR PRTs")
+            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
+            PRTs_section= read_protein_table(workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
+            show_table(PRTs_section[0])
 
+            st.write("Protein summary")
+            show_table(PRTs_section[2])
+            st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
+            show_table(PRTs_section[3])
+            st.write("Precursor adduct summary")
+            show_table(PRTs_section[4])
 
 # At the end of each page, always save parameters (including any changes via widgets with key)
 save_params(params)

@@ -184,6 +184,7 @@ def remove_and_get_unique_elements(input_list):
 import pandas as pd
 from pyopenms import IdXMLFile
 
+
 # convert every string col into an int or float if possible
 def strToFloat(df):
   for col in df:
@@ -199,63 +200,137 @@ def readAndProcessIdXML(input_file, top=1):
   convert the (.idXML) format identification file to dataframe
   """
   prot_ids = []; pep_ids = []
-  IdXMLFile().load(input_file, prot_ids, pep_ids)
+  IdXMLFile().load(str(input_file), prot_ids, pep_ids)
   meta_value_keys = []
   rows = []
-  for peptide_id in pep_ids:
-    spectrum_id = peptide_id.getMetaValue("spectrum_reference")
-    scan_nr = spectrum_id[spectrum_id.rfind('=') + 1 : ]
+  #st.write("len of pep_ids:", len(pep_ids))
+  if len(pep_ids)>0:
+    for peptide_id in pep_ids:
+        spectrum_id = peptide_id.getMetaValue("spectrum_reference")
+        scan_nr = spectrum_id[spectrum_id.rfind('=') + 1 : ]
 
-    hits = peptide_id.getHits()
+        hits = peptide_id.getHits()
 
-    psm_index = 1
-    for h in hits:
-      if psm_index > top:
-        break
-      charge = h.getCharge()
-      score = h.getScore()
-      z2 = 0; z3 = 0; z4 = 0; z5 = 0
+        psm_index = 1
+        for h in hits:
+            if psm_index > top:
+                break
+            charge = h.getCharge()
+            score = h.getScore()
+            z2 = 0; z3 = 0; z4 = 0; z5 = 0
 
-      if charge == 2:
-          z2 = 1
-      if charge == 3:
-          z3 = 1
-      if charge == 4:
-          z4 = 1
-      if charge == 5:
-          z5 = 1
-      if "target" in h.getMetaValue("target_decoy"):
-          label = 1
-      else:
-          label = 0
-      sequence = h.getSequence().toString()
-      if len(meta_value_keys) == 0: # fill meta value keys on first run
-        h.getKeys(meta_value_keys)
-        meta_value_keys = [x.decode() for x in meta_value_keys]
-        all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions'] + meta_value_keys
-        #print(all_columns)
-      # static part
-      accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
+            if charge == 2:
+                z2 = 1
+            if charge == 3:
+                z3 = 1
+            if charge == 4:
+                z4 = 1
+            if charge == 5:
+                z5 = 1
+            if "target" in h.getMetaValue("target_decoy"):
+                label = 1
+            else:
+                label = 0
+            sequence = h.getSequence().toString()
+            if len(meta_value_keys) == 0: # fill meta value keys on first run
+                h.getKeys(meta_value_keys)
+                meta_value_keys = [x.decode() for x in meta_value_keys]
+                all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions'] + meta_value_keys
+                #print(all_columns)
+            # static part
+            accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
 
-      row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions]
-      # scores in meta values
-      for k in meta_value_keys:
-        s = h.getMetaValue(k)
-        if type(s) == bytes:
-          s = s.decode()
-        row.append(s)
-      rows.append(row)
-      psm_index += 1
-      break; # parse only first hit
+            row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions]
+            # scores in meta values
+            for k in meta_value_keys:
+                s = h.getMetaValue(k)
+                if type(s) == bytes:
+                    s = s.decode()
+                row.append(s)
+            rows.append(row)
+            psm_index += 1
+            break; # parse only first hit
   
-  df =pd.DataFrame(rows, columns=all_columns)
-  convert_dict = {'SpecId': str,
-                  'PSMId': int,
-                  'Label': int,
-                  'Score': float,
-                  'ScanNr': int,
-                  'peplen': int                
-               }
+    df =pd.DataFrame(rows, columns=all_columns)
+    convert_dict = {'SpecId': str,
+                    'PSMId': int,
+                    'Label': int,
+                    'Score': float,
+                    'ScanNr': int,
+                    'peplen': int                
+                }
+    
+    df = df.astype(convert_dict)
+    return df
   
-  df = df.astype(convert_dict)
-  return df
+  else: 
+      return None
+  
+
+######################### Deal with TSV file of proteins #######
+from io import StringIO
+
+def read_protein_table(input_file):
+    section_dfs = []
+    current_section = []
+    skip_next_line = False
+    use_next_line_as_header = False
+
+    # Read the TSV file line by line
+    with open(input_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+
+            # Check if the line is a section header
+            if line.startswith('==') and line.endswith('=='):
+                # Save the current section DataFrame to the list
+                if current_section:
+                    # If the section is 2, 3, or 5, use the next line as the header and remove the current header
+                    if use_next_line_as_header:
+                        try:
+                            section_df = pd.read_csv(StringIO('\n'.join(current_section[1:])), delimiter='\t', header=None)
+                            section_df.columns = current_section[0].split('\t')
+                        except pd.errors.EmptyDataError:
+                            # Handle the EmptyDataError by creating an empty DataFrame with appropriate headers
+                            section_df = pd.DataFrame(columns=current_section[0].split('\t'))
+                        section_dfs.append(section_df)
+                        use_next_line_as_header = False
+                    else:
+                        try:
+                            section_df = pd.read_csv(StringIO('\n'.join(current_section)), delimiter='\t')
+                        except pd.errors.EmptyDataError:
+                            # Handle the EmptyDataError by creating an empty DataFrame
+                            section_df = pd.DataFrame()
+                        section_dfs.append(section_df)
+
+                    current_section = []
+                    skip_next_line = True
+            else:
+                # Append the line to the current section content
+                if not skip_next_line:
+                    current_section.append(line)
+                skip_next_line = False
+
+                # Check if the next section should use the next line as the header
+                if line.startswith("Protein summary") or line.startswith("Crosslink efficiency") or line.startswith("Precursor adduct summary"):
+                    use_next_line_as_header = True
+
+                # Check if section 4, then update header
+                if line.startswith("Crosslink efficiency"):
+                    use_next_line_as_header = False
+                    header_line = next(f).strip()
+                    header = ["AA", "Crosslink efficiency"]
+                    current_section.append(header_line)
+                    current_section[0] = "\t".join(header)
+
+    # Append the last section to the list
+    if current_section:
+        try:
+            section_df = pd.read_csv(StringIO('\n'.join(current_section)), delimiter='\t')
+        except pd.errors.EmptyDataError:
+            # Handle the EmptyDataError by creating an empty DataFrame
+            section_df = pd.DataFrame()
+        section_dfs.append(section_df)
+
+    return section_dfs
+
