@@ -186,7 +186,7 @@ if result_dict["success"]:
     show_table(df)
 
     ## download identification files of XLS PSMs/PRTs
-    #download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
+    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
     st.info(result_dict["log"])
 
 
