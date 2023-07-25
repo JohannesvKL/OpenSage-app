@@ -126,7 +126,6 @@ def remove_all_mzML_files() -> None:
     st.session_state["selected-mzML-files"] = []
     st.success("All mzML files removed!")
 
-
 ##################### Fasta ########################################################
 fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
 

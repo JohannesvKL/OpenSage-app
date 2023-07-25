@@ -17,10 +17,12 @@ if "selected-fasta-files" not in st.session_state:
     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
 
 load_example_mzML_files()
+mzML_files_ = [f.name for f in Path(st.session_state.workspace,
+                          "mzML-files").iterdir()]
 selected_mzML_file = st.selectbox(
     "choose mzML file",
-    [f.name for f in Path(st.session_state.workspace,
-                          "mzML-files").iterdir()],
+    [item for item in mzML_files_ if not item.endswith(".csv")]
+    ,
     help="If file not here, please upload at File Upload"
 )
 
@@ -177,7 +179,7 @@ if result_dict["success"]:
         identification_files = [string for string in All_files if "_XLs"  in string or "_proteins" in string]
  
     ### file withour FDR control, we used in rescoring paper
-    identification_files.append(f"{protocol_name}.idXML")
+    #identification_files.append(f"{protocol_name}.idXML")
     #st.write("identification_files", identification_files)
 
     ##showing all current files
@@ -185,10 +187,10 @@ if result_dict["success"]:
     df = pd.DataFrame({"output files ": current_analysis_files})
     show_table(df)
 
-    ## download identification files of XLS PSMs/PRTs
-    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_identification_files")
-    st.info(result_dict["log"])
+    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_XL_identification_files")
 
+    #st.info(result_dict["log"])  
+    st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
 
 
 ####### This code for without threading implementation#######################

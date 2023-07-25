@@ -30,27 +30,28 @@ def captcha_control():
         image = ImageCaptcha(width=width, height=height)
         data = image.generate(st.session_state['Captcha'])
         col1.image(data)
-        capta2_text = col2.text_area('Enter captcha text', height=20)
-        
-        
-        if st.button("Verify the code"):
-            capta2_text = capta2_text.replace(" ", "")
-            # if the captcha is correct, the controllo session state is set to True
-            if st.session_state['Captcha'].lower() == capta2_text.lower().strip():
-                del st.session_state['Captcha']
-                col1.empty()
-                col2.empty()
-                st.session_state['controllo'] = True
-                st.experimental_rerun() 
+        capta2_text = col2.text_area('Enter captcha text', height=10)
+
+        col3, col4 = st.columns(2)
+        with col4:
+            if st.button("Verify the code"):
+                capta2_text = capta2_text.replace(" ", "")
+                # if the captcha is correct, the controllo session state is set to True
+                if st.session_state['Captcha'].lower() == capta2_text.lower().strip():
+                    del st.session_state['Captcha']
+                    col1.empty()
+                    col2.empty()
+                    st.session_state['controllo'] = True
+                    st.experimental_rerun() 
+                else:
+                    # if the captcha is wrong, the controllo session state is set to False and the captcha is regenerated
+                    st.error("🚨 Captch is wrong")
+                    del st.session_state['Captcha']
+                    del st.session_state['controllo']
+                    st.experimental_rerun()
             else:
-                # if the captcha is wrong, the controllo session state is set to False and the captcha is regenerated
-                st.error("🚨 Captch is wrong")
-                del st.session_state['Captcha']
-                del st.session_state['controllo']
-                st.experimental_rerun()
-        else:
-            #wait for the button click
-            st.stop()
+                #wait for the button click
+                st.stop()
 
 # Increase the maximum upload file size to 1000MB
 #st.set_option("server.maxUploadSize", 1000 * 1024 * 1024)
