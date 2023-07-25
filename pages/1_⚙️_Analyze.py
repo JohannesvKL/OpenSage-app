@@ -78,13 +78,13 @@ with cols[0]:
     with cols_[0]:
         Precursor_MT = str(st.number_input("Precursor mass tolerance",value=6, help = "Precursor mass tolerance (+/- around precursor m/z). (default: '6.0')"))
     with cols_[1]:
-        Precursor_MT_unit= st.selectbox(' ',['ppm', 'Da'])
+        Precursor_MT_unit= st.selectbox('Precursor mass tolerance unit',['ppm', 'Da'])
 with cols[1]:
     cols_=st.columns(2)
     with cols_[0]:
         Fragment_MT = str(st.number_input("Fragment mass tolerance",value=20, help = "Fragment mass tolerance (+/- around fragment m/z). (default: '20.0')"))
     with cols_[1]:
-        Fragment_MT_unit= st.selectbox('',['ppm', 'Da'])
+        Fragment_MT_unit= st.selectbox('Fragment mass tolerance unit',['ppm', 'Da'])
     
 
 cols=st.columns(2)
@@ -162,35 +162,37 @@ if st.button("Run-analysis"):
         thread.join()
 
 
-if result_dict["success"]:
-    st.success(f"Analyze done successfully of **{protocol_name}**")
-    # Save the log to a text file in the result_dir
-    log_file_path = result_dir / f"{protocol_name}_log.txt"
-    with open(log_file_path, "w") as log_file:
-        log_file.write(result_dict["log"])
+    if result_dict["success"]:
+        st.success(f"Analyze done successfully of **{protocol_name}**")
+        # Save the log to a text file in the result_dir
+        log_file_path = result_dir / f"{protocol_name}_log.txt"
+        with open(log_file_path, "w") as log_file:
+            log_file.write(result_dict["log"])
 
-    All_files = [f.name for f in sorted(result_dir.iterdir())]
+        All_files = [f.name for f in sorted(result_dir.iterdir())]
 
-    ### just show and download the identification_files of XLs PSMs/PRTs 
-    perc_exec = any("_perc_" in string for string in All_files)
-    if perc_exec :
-        identification_files = [string for string in All_files if "_perc_0.0100_XLs"  in string or "_perc_0.1000_XLs" in string or "_perc_1.0000_XLs" in string or "_perc_proteins" in string]
+        ### just show and download the identification_files of XLs PSMs/PRTs 
+        perc_exec = any("_perc_" in string for string in All_files)
+        if perc_exec :
+            identification_files = [string for string in All_files if "_perc_0.0100_XLs"  in string or "_perc_0.1000_XLs" in string or "_perc_1.0000_XLs" in string or "_perc_proteins" in string]
+        else:
+            identification_files = [string for string in All_files if "_XLs"  in string or "_proteins" in string]
+    
+        ### file withour FDR control, we used in rescoring paper
+        #identification_files.append(f"{protocol_name}.idXML")
+        #st.write("identification_files", identification_files)
+
+        ##showing all current files
+        current_analysis_files = [s for s in All_files if protocol_name in s]
+        df = pd.DataFrame({"output files ": current_analysis_files})
+        show_table(df)
+
+        download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_XL_identification_files")
+
+        #st.info(result_dict["log"])  
+        st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
     else:
-        identification_files = [string for string in All_files if "_XLs"  in string or "_proteins" in string]
- 
-    ### file withour FDR control, we used in rescoring paper
-    #identification_files.append(f"{protocol_name}.idXML")
-    #st.write("identification_files", identification_files)
-
-    ##showing all current files
-    current_analysis_files = [s for s in All_files if protocol_name in s]
-    df = pd.DataFrame({"output files ": current_analysis_files})
-    show_table(df)
-
-    download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_XL_identification_files")
-
-    #st.info(result_dict["log"])  
-    st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
+        st.error(f"{protocol_name} output log",value= str(result_dict["log"]), height=200)
 
 
 ####### This code for without threading implementation#######################
