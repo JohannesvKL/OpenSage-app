@@ -192,7 +192,7 @@ if st.button("Run-analysis"):
         #st.info(result_dict["log"])  
         st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
     else:
-        st.error(f"{protocol_name} output log",value= str(result_dict["log"]), height=200)
+        st.error(str(result_dict["log"]))
 
 
 ####### This code for without threading implementation#######################
