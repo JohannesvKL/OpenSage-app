@@ -59,7 +59,8 @@ with tabs[0]:
 
             ### afraid if there are many files in workspace? should we removed this option?
             if c1.button("⚠️ Download **all**", disabled=not any(result_dir.iterdir())):
-                b64_zip_content = create_zip_and_get_base64()
+                #download from directory
+                b64_zip_content = create_zip_and_get_base64_()
                 href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="all_result_files.zip">Download All Files</a>'
                 st.markdown(href, unsafe_allow_html=True)
 

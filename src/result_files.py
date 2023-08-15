@@ -120,7 +120,7 @@ import io
 from zipfile import ZipFile
 
 ## create zip files of all available files in result folder
-def create_zip_and_get_base64():
+def create_zip_and_get_base64_():
     # Create a temporary in-memory zip file
     buffer = io.BytesIO()
     with ZipFile(buffer, 'w') as zip_file:
@@ -150,7 +150,6 @@ def create_zip_and_get_base64(file_paths):
     b64_zip_content = base64.b64encode(buffer.getvalue()).decode('utf-8')
     
     return b64_zip_content
-
 
 def download_selected_result_files(to_download: list[str], link_name: str) -> None:
     """
