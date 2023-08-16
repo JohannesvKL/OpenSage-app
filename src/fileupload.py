@@ -40,9 +40,11 @@ def save_uploaded_mzML(uploaded_files: list[bytes]) -> None:
     if st.session_state.location == "online":
         uploaded_files = [uploaded_files]
     # If no files are uploaded, exit early
-    if not uploaded_files:
-        st.warning("Upload some files first.")
-        return
+    for f in uploaded_files:
+        if f is None:
+            st.warning("Upload some files first.")
+            return
+        
     # Write files from buffer to workspace mzML directory, add to selected files
     for f in uploaded_files:
         if f.name not in [f.name for f in mzML_dir.iterdir()] and f.name.endswith("mzML"):
@@ -159,9 +161,11 @@ def save_uploaded_fasta(uploaded_files: list[bytes]) -> None:
     if st.session_state.location == "online":
         uploaded_files = [uploaded_files]
     # If no files are uploaded, exit early
-    if not uploaded_files:
-        st.warning("Upload some files first.")
-        return
+    for f in uploaded_files:
+        if f is None:
+            st.warning("Upload some files first.")
+            return
+        
     # Write files from buffer to workspace fasta directory, add to selected files
     for f in uploaded_files:
         if f.name not in [f.name for f in fasta_dir.iterdir()] and f.name.endswith("fasta"):

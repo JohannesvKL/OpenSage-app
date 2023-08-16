@@ -333,3 +333,43 @@ def read_protein_table(input_file):
 
     return section_dfs
 
+def add_to_selected_result_files(filename: str):
+    """
+    Add the given filename to the list of selected result files.
+
+    Args:
+        filename (str): The filename to be added to the list of selected result-files.
+
+    Returns:
+        None
+    """
+    # Check if file in params selected mzML files, if not add it
+    if filename not in st.session_state["selected-result-files"]:
+        st.session_state["selected-result-files"].append(filename)
+
+def save_uploaded_result(uploaded_files: list[bytes]) -> None:
+    """
+    Saves uploaded result files to the result-files directory.
+
+    Args:
+        uploaded_files (List[bytes]): List of uploaded result files (idXML and tsv).
+
+    Returns:
+        None
+    """
+    # A list of files is required, since online allows only single upload, create a list
+    if st.session_state.location == "online":
+        uploaded_files = [uploaded_files]
+    # If no files are uploaded, exit early
+    for f in uploaded_files:
+        if f is None:
+            st.warning("Upload some files first.")
+            return
+        
+    # Write files from buffer to workspace mzML directory, add to selected files
+    for f in uploaded_files:
+        if f.name not in [f.name for f in result_dir.iterdir()] and f.name.endswith(".idXML"):
+            with open(Path(result_dir, f.name), "wb") as fh:
+                fh.write(f.getbuffer())
+        add_to_selected_result_files(Path(f.name).stem)
+    st.success("Successfully added uploaded files!")
