@@ -366,6 +366,7 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
             st.warning("Upload some files first.")
             return
         
+
     # Write files from buffer to workspace mzML directory, add to selected files
     for f in uploaded_files:
         if f.name not in [f.name for f in result_dir.iterdir()] and f.name.endswith(".idXML"):
