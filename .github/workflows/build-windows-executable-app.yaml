@@ -213,6 +213,7 @@ jobs:
         cp -r streamlit_exe/.streamlit dist/.streamlit
         cp -r pages dist/pages
         cp -r src dist/src
+        cp -r example-data dist/src
         cp -r assets dist/assets
         cp -r openms-bin dist/bin
         cp -r share dist/share
