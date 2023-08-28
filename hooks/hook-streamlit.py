@@ -3,3 +3,4 @@ datas = []
 datas += copy_metadata('streamlit')
 datas += copy_metadata('streamlit_plotly_events')
 datas += copy_metadata('pyopenms')  
+datas += copy_metadata('captcha') 
