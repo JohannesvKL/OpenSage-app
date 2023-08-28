@@ -93,7 +93,7 @@ jobs:
         cp -r dist artifacts/
         cp -r build artifacts/
         cp run_app.spec artifacts/ 
-        cp myenv artifacts/
+        cp -r myenv artifacts/
         cp D:/a/streamlit-template/streamlit-template/myenv/Lib/site-packages/streamlit/web/cli.py artifacts/ 
 
     - name: Upload artifacts
