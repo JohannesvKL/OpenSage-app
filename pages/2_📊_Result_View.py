@@ -17,44 +17,67 @@ if st.session_state.location == "local":
 
 with tabs[0]:
 
-    load_example_result_files()
-    session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir()]
+    # first try (just show the file if both proteins and idXML table there)
+    #load_example_result_files()
+    #session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir()]
     #st.write("all files in result_folder: ", session_files)
-    fdr_list = [string for string in session_files if "0.0100_XLs" in string]
+    #fdr_list = [string for string in session_files if "0.0100_XLs" in string]
     
     #check if perc base files results
     #perc_exec = any("_perc_" in string for string in session_file)
 
     #Take the protocol results which contain both PSMs/PRTs file available in workspace
-    unique_protocol_list = set([string.replace("_proteins0.0100_XLs.tsv", '').replace("_0.0100_XLs.idXML", '') for string in fdr_list])
+    #unique_protocol_list = set([string.replace("_proteins0.0100_XLs.tsv", '').replace("_0.0100_XLs.idXML", '') for string in fdr_list])
 
-    final_protocols = [i for i in unique_protocol_list if i+"_proteins0.0100_XLs.tsv" in fdr_list and i+"_0.0100_XLs.idXML" in fdr_list]
+    #final_protocols = [i for i in unique_protocol_list if i+"_proteins0.0100_XLs.tsv" in fdr_list and i+"_0.0100_XLs.idXML" in fdr_list]
     #st.write("contain both protein PSMs", final_protocols)s
 
-    selected_file = st.selectbox("choose a currently protocol file to view",final_protocols)
+    #selected_file = st.selectbox("choose a currently protocol file to view",final_protocols)
+
+    #workspace_path = Path(st.session_state.workspace)
+    
+
+    load_example_result_files()
+    session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if f.name.endswith(".idXML")]
+    #st.write("all files in result_folder: ", session_files)
+    selected_file = st.selectbox("choose a currently protocol file to view",session_files)
 
     workspace_path = Path(st.session_state.workspace)
 
     tabs_ = st.tabs(["CSMs", "Proteins"])
     if selected_file:
         with tabs_[0]:
-            st.write("Table of 1% XL FDR CSMs")
+            st.write("CSMs Table")
             #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
-            CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
+            CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}")
             show_table(CSM_)
 
         with tabs_[1]:
-            st.write("Table of 1% XL FDR PRTs")
-            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
-            PRTs_section= read_protein_table(workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
-            show_table(PRTs_section[0])
+            # Extracting components from the input filename
+            parts = selected_file.split('_')
+            prefix = '_'.join(parts[:-2])  # Joining all parts except the last two
+            perc_value = parts[-2]  # Extracting the percentage value
 
-            st.write("Protein summary")
-            show_table(PRTs_section[2])
-            st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
-            show_table(PRTs_section[3])
-            st.write("Precursor adduct summary")
-            show_table(PRTs_section[4])
+            # Creating the new filename
+            new_filename = f"{prefix}_proteins{perc_value}_XLs.tsv"
+
+            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
+            protein_path = workspace_path / "result-files" /f"{new_filename}"
+
+            if protein_path.exists():
+                st.write("PRTs Table")
+                PRTs_section= read_protein_table(protein_path)
+                show_table(PRTs_section[0])
+
+                st.write("Protein summary")
+                show_table(PRTs_section[2])
+                st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
+                show_table(PRTs_section[3])
+                st.write("Precursor adduct summary")
+                show_table(PRTs_section[4])
+
+            else:
+                st.warning(f"{protein_path.name} file not exist in current workspace")
 
 with tabs[1]:
     load_example_result_files()
