@@ -38,7 +38,7 @@ with tabs[0]:
     
 
     load_example_result_files()
-    session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if f.name.endswith(".idXML")]
+    session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if (f.name.endswith(".idXML") and "_XLs" in f.name)]
     #st.write("all files in result_folder: ", session_files)
     selected_file = st.selectbox("choose a currently protocol file to view",session_files)
 
