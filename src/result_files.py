@@ -270,6 +270,9 @@ def readAndProcessIdXML(input_file, top=1):
 from io import StringIO
 
 def read_protein_table(input_file):
+    """
+    convert the (.tsv) protein output table to dataframe
+    """
     section_dfs = []
     current_section = []
     skip_next_line = False
@@ -369,8 +372,9 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
 
     # Write files from buffer to workspace mzML directory, add to selected files
     for f in uploaded_files:
-        if f.name not in [f.name for f in result_dir.iterdir()] and f.name.endswith(".idXML"):
+        if f.name not in [f.name for f in result_dir.iterdir()] and (f.name.endswith(".idXML") or f.name.endswith(".tsv")):
             with open(Path(result_dir, f.name), "wb") as fh:
                 fh.write(f.getbuffer())
         add_to_selected_result_files(Path(f.name).stem)
     st.success("Successfully added uploaded files!")
+    st.experimental_rerun()
