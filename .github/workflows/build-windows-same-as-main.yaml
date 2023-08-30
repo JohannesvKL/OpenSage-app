@@ -1,6 +1,5 @@
 name: Build executable for Windows
-on: #[push]
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build-openms:
@@ -14,7 +13,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: OpenMS/OpenMS
-        ref: release/${{ env.OPENMS_VERSION }}
+        ref: feature/NuXL
         path: 'OpenMS'
 
     - name: Install Qt
@@ -211,11 +210,11 @@ jobs:
 
     - name: Copy everything to dist directory
       run: |
-        cp -r streamlit_exe/.streamlit dist/.streamlit
+        cp -r .streamlit dist/.streamlit
         cp -r pages dist/pages
         cp -r src dist/src
-        cp -r example-data dist/src
         cp -r assets dist/assets
+        cp -r example-data dist/example-data
         cp -r openms-bin dist/bin
         cp -r share dist/share
         cp app.py dist/
@@ -231,8 +230,18 @@ jobs:
         call myenv\Scripts\activate.bat
         pyinstaller run_app.spec --clean
 
+    - name: Delete OpenMS bin artifact
+      uses: geekyeggo/delete-artifact@v2
+      with:
+          name: OpenMS-bin
+
+    - name: Delete OpenMS share artifact
+      uses: geekyeggo/delete-artifact@v2
+      with:
+          name: OpenMS-share
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: OpenMS-NuXLApp
+        name: OpenMS-App
         path: dist
