@@ -15,7 +15,7 @@ a = Analysis(
         ("./myenv/Lib/site-packages/streamlit_plotly_events", "./streamlit_plotly_events/"),
 	    ("./myenv/Lib/site-packages/pyopenms", "./pyopenms/"),
         ("./myenv/Lib/site-packages/captcha", "./captcha/"),
-        
+        ("./myenv/Lib/site-packages/pyarrow", "./pyarrow/"), 
     ],
     hiddenimports=[],
     hookspath=['./hooks'],
