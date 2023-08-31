@@ -1,5 +1,6 @@
 name: Build executable for Windows_as_main
-on: [push]
+on: #[push]
+  workflow_dispatch:
 
 jobs:
   build-openms:
