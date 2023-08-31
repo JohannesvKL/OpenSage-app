@@ -107,29 +107,47 @@ with cols[1]:
     scoring  = st.selectbox('Select the scoring method',("slow", "fast"), help="Scoring algorithm used in prescoring (fast: total-loss only, slow: all losses). (default: 'slow') (valid: 'fast', 'slow')")
 
 ## take the exact name of file, create same file 
-mzML_file_name = mzML_file_path.split('/')
+mzML_file_name = mzML_file_path.split('\\')
 protocol_name = mzML_file_name[len(mzML_file_name)-1].replace(".mzML", "")
-result_path = str(result_dir)+"/"+protocol_name+".idXML"
+result_path = str(result_dir)+"\\"+protocol_name+".idXML"
 #st.write(result_path)
+##################################### NuXL command ###########################
 
-
-################# Here we will run the NuXL command ###########################
-
-# Use a dictionary to store the subprocess result
 result_dict = {}
 result_dict["success"] = False
 result_dict["log"] = " "
 
 def run_subprocess(args, variables, result_dict):
-    st.write("inside run_subprocess")
-    process = subprocess.Popen(args + list(variables), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    stdout, stderr = process.communicate()
+    #st.write("inside run_subprocess")
+    #process = subprocess.Popen(args + list(variables), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, text=True)
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    stdout_ = []
+    stderr_ = []
+
+    while True:
+        output = process.stdout.readline()
+        if output == '' and process.poll() is not None:
+            break
+        if output:
+            st.text(output.strip())
+            stdout_.append(output.strip())
+
+    while True:
+        error = process.stderr.readline()
+        if error == '' and process.poll() is not None:
+            break
+        if error:
+            st.error(error.strip())
+            stderr_.append(error.strip())
+
     if process.returncode == 0:
         result_dict["success"] = True
-        result_dict["log"] = stdout
+        result_dict["log"] = " ".join(stdout_)
     else:
         result_dict["success"] = False
-        result_dict["log"] = stderr
+        result_dict["log"] = " ".join(stderr_)
+
 
 terminate_flag = threading.Event()
 terminate_flag.set()
@@ -152,14 +170,16 @@ if st.button("Run-analysis"):
                         "-modifications:variable", Variable_modification]  # Replace with the subprocess command and arguments
         variables = []  # Add any additional variables needed for the subprocess (if any)
 
-        message = f"Running '{' '.join(args)}'"
-        st.code(message)
+        #message = f"Running '{' '.join(args)}'"
+        #st.code(message)
+        
+        run_subprocess(args, variables, result_dict)
 
         # Use st.experimental_thread to run the subprocess asynchronously
-        terminate_flag = threading.Event()
-        thread = threading.Thread(target=run_subprocess, args=(args, variables, result_dict))
-        thread.start()
-        thread.join()
+        #terminate_flag = threading.Event()
+        #thread = threading.Thread(target=run_subprocess, args=(args, variables, result_dict))
+        #thread.start()
+        #thread.join()
 
 
     if result_dict["success"]:
@@ -190,61 +210,6 @@ if st.button("Run-analysis"):
         download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_XL_identification_files")
 
         #st.info(result_dict["log"])  
-        st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
-    else:
-        st.error(str(result_dict["log"]))
-
-
-####### This code for without threading implementation#######################
-#button1 = st.button("Run-analysis")
-def run_command(args, *variables):
-    """Run command, transfer stdout/stderr back into Streamlit and manage error"""
-    #st.info(repr(f"Running '{' '.join(args)}'"))
-    message = f"Running '{' '.join(args)}'"
-    st.code(message)
-    process = subprocess.Popen(args + list(variables), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    terminate_button = st.button("Terminate/Clear", help="For termination of anlayze or clear everything")
-    try:
-        while process.poll() is None:
-            if terminate_button:
-                process.terminate()
-                st.warning("Process terminated by user.")
-                break
-        else:
-            stdout, stderr = process.communicate()
-            if process.returncode == 0:
-                return True, stdout
-            else:
-                st.error(stderr)
-                return False, stderr
-    except KeyboardInterrupt:
-        process.terminate()
-        st.warning("Process terminated by user.")
-        raise KeyboardInterrupt
-
-#analyze_done = False
-#log = ""
-#if button1:
-#  with st.spinner("Running analysis... Please wait until analysis done 😑"):    
-#    analyze_done, log = run_command(["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-#                    "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-#                    "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-#                    "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-#                    "-modifications:variable", Variable_modification])
-#    #st.write("after analyze command", analyze_done)
-
-#if analyze_done:
-#    st.success(f"Analyze done successfully of **{protocol_name}**")
-#    # Save the log to a text file in the result_dir
-#    log_file_path = result_dir / f"{protocol_name}_log.txt"
-#    with open(log_file_path, "w") as log_file:
-#        log_file.write(log)
-        
-#    All_files = [f.name for f in sorted(result_dir.iterdir())]
-#    current_analysis_files = [s for s in All_files if  protocol_name in s]
-#    df = pd.DataFrame({"output files ": current_analysis_files})
-#    show_table(df)
-#    download_selected_result_files(current_analysis_files, "download_output_files")
-#    st.info(log)'''
+        #st.text_area(f"{protocol_name} output log",value= str(result_dict["log"]), height=500)
 
 save_params(params)
