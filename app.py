@@ -30,8 +30,7 @@ def captcha_control():
         image = ImageCaptcha(width=width, height=height)
         data = image.generate(st.session_state['Captcha'])
         col1.image(data)
-        capta2_text = col2.text_area('Enter captcha text', height=10)
-
+        capta2_text = col2.text_area('Enter captcha text', height=10, placeholder="captcha text")
         col3, col4 = st.columns(2)
         with col4:
             if st.button("Verify the code"):

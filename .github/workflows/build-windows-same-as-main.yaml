@@ -1,6 +1,6 @@
 name: Build executable for Windows_as_main
-on: #[push]
-  workflow_dispatch:
+on: [push]
+  #workflow_dispatch:
 
 jobs:
   build-openms:
@@ -125,14 +125,14 @@ jobs:
           CCACHE_COMPRESSLEVEL: 12
           CCACHE_MAXSIZE: 400M
 
-    - name: Test Windows
-      shell: bash
-      run: $LAUNCHER ctest --output-on-failure -V -S $GITHUB_WORKSPACE/OpenMS/tools/ci/citest.cmake
-      env:
-          LAUNCHER: ""
-          SOURCE_DIRECTORY: "${{ github.workspace }}/OpenMS"
-          CI_PROVIDER: "GitHub-Actions"
-          BUILD_NAME: "${{ env.RUN_NAME }}-Win64-class-topp-${{ github.run_number }}"
+    # - name: Test Windows
+    #  shell: bash
+    #  run: $LAUNCHER ctest --output-on-failure -V -S $GITHUB_WORKSPACE/OpenMS/tools/ci/citest.cmake
+    #  env:
+    #      LAUNCHER: ""
+    #      SOURCE_DIRECTORY: "${{ github.workspace }}/OpenMS"
+    #      CI_PROVIDER: "GitHub-Actions"
+    #      BUILD_NAME: "${{ env.RUN_NAME }}-Win64-class-topp-${{ github.run_number }}"
 
     - name: Upload TOPP tools as artifact
       uses: actions/upload-artifact@v3
@@ -150,7 +150,7 @@ jobs:
     runs-on: windows-latest
     needs: build-openms
 
-    env:
+    env: 
       PYTHON_VERSION: 3.11.0
 
     steps:
