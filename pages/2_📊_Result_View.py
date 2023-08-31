@@ -1,6 +1,9 @@
 import streamlit as st
 from src.common import *
 from src.result_files import *
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+
 
 params = page_setup()
 
@@ -71,10 +74,45 @@ with tabs[0]:
 
                 st.write("Protein summary")
                 show_table(PRTs_section[2])
-                st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
-                show_table(PRTs_section[3])
-                st.write("Precursor adduct summary")
-                show_table(PRTs_section[4])
+
+                col1, col2 = st.columns(2)
+
+                # Display the plots in the columns
+                with col1:
+                    st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
+                    #show_table(PRTs_section[3])
+
+                    prts_efficiency = PRTs_section[3]
+        
+                    efficiency_fig = go.Figure(data=[go.Bar(x=prts_efficiency["AA"], y=prts_efficiency["Crosslink efficiency"], marker_color='rgb(55, 83, 109)')])
+
+                    efficiency_fig.update_layout(
+                        #title='Crosslink efficiency',
+                        xaxis_title='Amino acids',
+                        yaxis_title='Crosslink efficiency',
+                        font=dict(family='Arial', size=12, color='rgb(0,0,0)'),
+                        paper_bgcolor='rgb(255, 255, 255)',
+                        plot_bgcolor='rgb(255, 255, 255)'
+                    )
+
+                    show_fig(efficiency_fig, "efficiency_fig")
+
+                with col2:
+                    st.write("Precursor adduct summary")
+                    #show_table(PRTs_section[4])
+
+                    #print(PRTs_section[4])
+                    precursor_summary = PRTs_section[4]
+
+                    adducts_fig = go.Figure(data=[go.Pie(
+                        labels=precursor_summary["Precursor adduct:"],
+                        values=precursor_summary["PSMs(%)"],
+                        hoverinfo='label+percent',
+                        textinfo='label+percent',
+                        #title='Percentage of PSMs for Each Index Precursor'
+                    )])
+
+                    show_fig(adducts_fig , "adducts_fig ")
 
             else:
                 st.warning(f"{protein_path.name} file not exist in current workspace")
