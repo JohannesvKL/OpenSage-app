@@ -162,6 +162,7 @@ def download_selected_result_files(to_download: list[str], link_name: str) -> No
         None
     """
     file_paths = [result_dir / f"{file_name}" for file_name in to_download]  # Replace "your_extension" with the actual file extension
+    #st.write("to_download", to_download)
     b64_zip_content = create_zip_and_get_base64(file_paths)
     href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="selected_files.zip">{link_name}</a>'
     st.markdown(href, unsafe_allow_html=True)
