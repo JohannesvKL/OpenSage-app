@@ -1,4 +1,4 @@
-name: Build executable for Windows
+name: Build executable for Windows_as_main
 on: [push]
 
 jobs:
