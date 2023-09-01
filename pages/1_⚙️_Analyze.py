@@ -53,15 +53,17 @@ sections = [
     "enzyme",
     "scoring",
     "variable_max_per_peptide",
-    "length"
-    #"mass_tolerance_precursor",
-    #"mass_tolerance_fragment"
+    "length",
+    "mass_tolerance",
+    "mass_tolerance_unit",
+    "min_size",
+    "max_size",
+    "missed_cleavages"
 ]
 
-path = r"D:\streamlit_development\NuXL-APP\streamlit-template\assets\OpenMS_NuXL.ini"
-
-NuXL_config=ini2dict(path, sections)
-st.write(NuXL_config['mass_tolerance']['description'] + " default: "+ NuXL_config['mass_tolerance']['default'])
+current_dir = os.getcwd()
+config_path = os.path.join(current_dir, 'assets', 'OpenMS_NuXL.ini')
+NuXL_config=ini2dict(config_path, sections)
 
 cols=st.columns(2)
 with cols[0]:
@@ -69,47 +71,43 @@ with cols[0]:
     with cols_[0]:
         Enzyme = st.selectbox('Enzyme',NuXL_config['enzyme']['restrictions'], help=NuXL_config['enzyme']['description'])
     with cols_[1]:
-        Missed_cleavages = str(st.number_input("Missed_cleavages",value=2, help="Number of missed cleavages. (default: '2')"))
+        Missed_cleavages = str(st.number_input("Missed_cleavages",value=int(NuXL_config['missed_cleavages']['default']), help=NuXL_config['missed_cleavages']['description'] + " default: "+ NuXL_config['missed_cleavages']['default']))
         if int(Missed_cleavages) <= 0:
             st.error("Length must be a positive integer greater than 0.")
 
 with cols[1]:
     cols_=st.columns(2)
     with cols_[0]:
-        peptide_min = st.text_input('peptide min length', '6', help="Minimum size a peptide must have after digestion to be considered in the search. (default: '6')")
-        if peptide_min != "":
-            if not peptide_min.isdigit():
-                st.error("Length must be a positive integer greater than 1.")
-            elif int(peptide_min) < 1:
+        peptide_min = str(st.number_input('peptide min length', value=int(NuXL_config['min_size']['default']), help=NuXL_config['min_size']['description'] + " default: "+ NuXL_config['min_size']['default']))
+        if int(peptide_min) < 1:
                 st.error("Length must be a positive integer greater than 1.")
 
     with cols_[1]:
-        peptide_max= st.text_input('peptide max length', '1000000', help="Maximum size a peptide may have after digestion to be considered in the search. (default: '1000000')")
-        if peptide_max != "":
-            if not peptide_max.isdigit():
-                st.error("Length must be a positive integer greater than 1.")
-            elif int(peptide_max) < 1:
+        peptide_max= str(st.number_input('peptide max length', value=int(NuXL_config['max_size']['default']), help=NuXL_config['max_size']['description'] + " default: "+ NuXL_config['max_size']['default']))
+        if int(peptide_max) < 1:
                 st.error("Length must be a positive integer greater than 1.")
 
 cols=st.columns(2)
 with cols[0]:
     cols_=st.columns(2)
     with cols_[0]:
-        Precursor_MT = str(st.number_input("Precursor mass tolerance",value=6, help = "Precursor mass tolerance (+/- around precursor m/z). (default: '6.0')"))
-        if int(Precursor_MT) <= 0:
+        Precursor_MT = str(st.number_input("Precursor mass tolerance",value=float(NuXL_config['precursor_mass_tolerance']['default']), help=NuXL_config['precursor_mass_tolerance']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance']['default']))
+        if float(Precursor_MT) <= 0:
             st.error("Precursor mass tolerance must be a positive integer")
 
     with cols_[1]:
-        Precursor_MT_unit= st.selectbox('Precursor mass tolerance unit',['ppm', 'Da'])
+        Precursor_MT_unit= st.selectbox('Precursor mass tolerance unit',NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['precursor_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'])
+
+
 with cols[1]:
     cols_=st.columns(2)
     with cols_[0]:
-        Fragment_MT = str(st.number_input("Fragment mass tolerance",value=20, help = "Fragment mass tolerance (+/- around fragment m/z). (default: '20.0')"))
-        if int(Fragment_MT) <= 0:
+        Fragment_MT = str(st.number_input("Fragment mass tolerance",value=float(NuXL_config['fragment_mass_tolerance']['default']), help=NuXL_config['fragment_mass_tolerance']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance']['default']))
+        if float(Fragment_MT) <= 0:
             st.error("Fragment mass tolerance must be a positive integer")
 
     with cols_[1]:
-        Fragment_MT_unit= st.selectbox('Fragment mass tolerance unit',['ppm', 'Da'])
+        Fragment_MT_unit= st.selectbox('Fragment mass tolerance unit', NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['fragment_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'])
     
 
 cols=st.columns(2)
@@ -215,8 +213,8 @@ if st.button("Run-analysis"):
         
         variables = []  # Add any additional variables needed for the subprocess (if any)
 
-        message = f"Running '{' '.join(args)}'"
-        st.code(message)
+        #message = f"Running '{' '.join(args)}'"
+        #st.code(message)
         
         run_subprocess(args, variables, result_dict)
 
