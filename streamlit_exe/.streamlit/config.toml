@@ -2,7 +2,8 @@
 developmentMode = false
 
 [server]
-port = 8502
+maxUploadSize = 50000
+port = 8505 
 
 [theme]
 

@@ -1,6 +1,6 @@
-name: Build executable for Windows_as_main
-on: [push]
-  #workflow_dispatch:
+name: Build executable for Windows
+on: #[push]
+  workflow_dispatch:
 
 jobs:
   build-openms:
@@ -124,8 +124,9 @@ jobs:
           CCACHE_COMPRESS: true
           CCACHE_COMPRESSLEVEL: 12
           CCACHE_MAXSIZE: 400M
-
-    # - name: Test Windows
+    
+    # Test error like RNPXL 
+    #- name: Test Windows
     #  shell: bash
     #  run: $LAUNCHER ctest --output-on-failure -V -S $GITHUB_WORKSPACE/OpenMS/tools/ci/citest.cmake
     #  env:
@@ -150,7 +151,7 @@ jobs:
     runs-on: windows-latest
     needs: build-openms
 
-    env: 
+    env:
       PYTHON_VERSION: 3.11.0
 
     steps:
@@ -211,13 +212,14 @@ jobs:
 
     - name: Copy everything to dist directory
       run: |
-        cp -r .streamlit dist/.streamlit
+        cp -r streamlit_exe/.streamlit dist/.streamlit
         cp -r pages dist/pages
         cp -r src dist/src
-        cp -r assets dist/assets
         cp -r example-data dist/example-data
+        cp -r assets dist/assets
         cp -r openms-bin dist/bin
         cp -r share dist/share
+        cp -r Percolator dist/Percolator
         cp app.py dist/
     
     - name: Modify .spec file
@@ -231,18 +233,8 @@ jobs:
         call myenv\Scripts\activate.bat
         pyinstaller run_app.spec --clean
 
-    - name: Delete OpenMS bin artifact
-      uses: geekyeggo/delete-artifact@v2
-      with:
-          name: OpenMS-bin
-
-    - name: Delete OpenMS share artifact
-      uses: geekyeggo/delete-artifact@v2
-      with:
-          name: OpenMS-share
-
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: OpenMS-App
+        name: OpenMS-NuXLApp
         path: dist

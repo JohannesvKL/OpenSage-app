@@ -1,6 +1,5 @@
 [server]
 maxUploadSize = 50000
-port = 8505
 
 [theme]
 

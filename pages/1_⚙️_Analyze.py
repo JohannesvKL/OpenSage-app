@@ -44,7 +44,7 @@ if selected_fasta_file:
     database_file_path = str(Path(st.session_state.workspace, "fasta-files", selected_fasta_file))
 
 
-######################## Take NuXL configurations ###
+######################## Take NuXL configurations #################################
 # Define the sections you want to extract
 sections = [
     "fixed",
@@ -143,7 +143,11 @@ mzML_file_name = os.path.basename(mzML_file_path)
 protocol_name = os.path.splitext(mzML_file_name)[0]
 result_path = os.path.join(result_dir, protocol_name + ".idXML")
 
-#st.write(result_path)
+########################## executables #########################
+
+OpenNuXL_exec = os.path.join(os.getcwd(), 'bin', 'OpenNuXL')
+perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
+
 ##################################### NuXL command ############################
 
 result_dict = {}
@@ -197,19 +201,19 @@ if st.button("Run-analysis"):
 
     with st.spinner("Running analysis... Please wait until analysis done 😑"):
         if formatted_fixed_modifications == "":
-            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
                         "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
                         "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
                         "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                        "-modifications:variable", formatted_variable_modifications]
+                        "-modifications:variable", formatted_variable_modifications, "-percolator_executable", perc_exec]
         
 
         else:
-            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
                         "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
                         "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
                         "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                        "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications]
+                        "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications, "-percolator_executable", perc_exec]
         
         variables = []  # Add any additional variables needed for the subprocess (if any)
 
