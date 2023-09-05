@@ -17,10 +17,10 @@ if "selected-fasta-files" not in st.session_state:
 
 st.title("📂 File Upload")
 
-tabs = ["mzML files", "Fasta files"]
-if st.session_state.location == "local":
-    tabs.append("Files from local folder")
+mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
+fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
 
+tabs = ["mzML files", "Fasta files"]
 tabs = st.tabs(tabs)
 
 with tabs[0]:
@@ -32,21 +32,19 @@ with tabs[0]:
             save_uploaded_mzML(files)
             #load_example_mzML_files()
 
-    
     load_example_mzML_files()
-        
     # Local file upload option: via directory path
-    if st.session_state.location == "local":
-        with tabs[2]:
-            # with st.form("local-file-upload"):
-            st.markdown("Short information text about the example data.")
-            local_mzML_dir = st.text_input(
-                "path to folder with mzML files")
-            # raw string for file paths
-            local_mzML_dir = r"{}".format(local_mzML_dir)
-            cols = st.columns(3)
-            if cols[1].button("Copy files to workspace", type="primary", disabled=(local_mzML_dir == "")):
-                copy_local_mzML_files_from_directory(local_mzML_dir)
+    #if st.session_state.location == "local":
+    #    with tabs[2]:
+    #        # with st.form("local-file-upload"):
+    #        st.markdown("Short information text about the example data.")
+    #        local_mzML_dir = st.text_input(
+    #            "path to folder with mzML files")
+    #        # raw string for file paths
+    #        local_mzML_dir = r"{}".format(local_mzML_dir)
+    #        cols = st.columns(3)
+    #        if cols[1].button("Copy files to workspace", type="primary", disabled=(local_mzML_dir == "")):
+    #            copy_local_mzML_files_from_directory(local_mzML_dir)'''
 
     if any(Path(mzML_dir).iterdir()):
         v_space(2)
@@ -80,16 +78,16 @@ with tabs[1]:
 
     load_example_fasta_files()
     # Local file upload option: via directory path
-    if st.session_state.location == "local":
-        with tabs[2]:
-            # with st.form("local-file-upload"):
-            local_fasta_dir = st.text_input(
-                "path to folder with fasta files")
-            # raw string for file paths
-            local_fasta_dir = r"{}".format(local_fasta_dir)
-            cols = st.columns(3)
-            if cols[1].button("Copy fasta to workspace", type="primary", disabled=(local_fasta_dir == "")):
-                copy_local_fasta_files_from_directory(local_fasta_dir)
+    #if st.session_state.location == "local":
+    #    with tabs[2]:
+    #        # with st.form("local-file-upload"):
+    #        local_fasta_dir = st.text_input(
+    #            "path to folder with fasta files")
+    #        # raw string for file paths
+    #        local_fasta_dir = r"{}".format(local_fasta_dir)
+    #        cols = st.columns(3)
+    #        if cols[1].button("Copy fasta to workspace", type="primary", disabled=(local_fasta_dir == "")):
+    #            copy_local_fasta_files_from_directory(local_fasta_dir)
 
     if any(Path(fasta_dir).iterdir()):
         v_space(2)

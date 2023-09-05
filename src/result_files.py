@@ -4,11 +4,6 @@ from pathlib import Path
 import streamlit as st
 from src.common import reset_directory
 
-
-# Specify result file location in workspace
-result_dir: Path = Path(st.session_state.workspace, "result-files")
-
-
 def add_to_result(filename: str):
     """
     Add the given filename to the list of view.
@@ -33,6 +28,8 @@ def load_example_result_files() -> None:
     Returns:
         None
     """
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     # Copy files from example-data/result to workspace result directory, add to selected files
     for f in Path("example-data", "idXMLs").glob("*"):
         #st.write("f in load_example", f)
@@ -59,6 +56,9 @@ def remove_selected_result_files(to_remove: list[str]) -> None:
     Returns:
         None
     """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     # remove all given files from result workspace directory and selected files
     #st.write("print all files in session state: ", st.session_state["selected-result-files"])
     for f in to_remove:
@@ -77,6 +77,9 @@ def remove_all_result_files() -> None:
     Returns:
         None
     """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     # reset (delete and re-create) result directory in workspace
     reset_directory(result_dir)
     # reset selected result list
@@ -94,6 +97,9 @@ def copy_local_result_files_from_directory(local_result_directory: str) -> None:
     Returns:
         None
     """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     #st.write("result_dir", local_result_directory)
     # Check if local directory contains result files, if not exit early
     if not any(Path(local_result_directory).glob("*")):
@@ -121,6 +127,9 @@ from zipfile import ZipFile
 
 ## create zip files of all available files in result folder
 def create_zip_and_get_base64_():
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     # Create a temporary in-memory zip file
     buffer = io.BytesIO()
     with ZipFile(buffer, 'w') as zip_file:
@@ -161,6 +170,9 @@ def download_selected_result_files(to_download: list[str], link_name: str) -> No
     Returns:
         None
     """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     file_paths = [result_dir / f"{file_name}" for file_name in to_download]  # Replace "your_extension" with the actual file extension
     #st.write("to_download", to_download)
     b64_zip_content = create_zip_and_get_base64(file_paths)
@@ -361,6 +373,9 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
     Returns:
         None
     """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
     # A list of files is required, since online allows only single upload, create a list
     if st.session_state.location == "online":
         uploaded_files = [uploaded_files]
@@ -370,7 +385,6 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
             st.warning("Upload some files first.")
             return
         
-
     # Write files from buffer to workspace mzML directory, add to selected files
     for f in uploaded_files:
         if f.name not in [f.name for f in result_dir.iterdir()] and (f.name.endswith(".idXML") or f.name.endswith(".tsv")):

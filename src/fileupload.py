@@ -1,14 +1,8 @@
 import shutil
 from pathlib import Path
-
 import streamlit as st
 
 from src.common import reset_directory
-
-
-# Specify mzML file location in workspace
-mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
-
 
 def add_to_selected_mzML(filename: str):
     """
@@ -23,7 +17,6 @@ def add_to_selected_mzML(filename: str):
     # Check if file in params selected mzML files, if not add it
     if filename not in st.session_state["selected-mzML-files"]:
         st.session_state["selected-mzML-files"].append(filename)
-
 
 @st.cache_data
 def save_uploaded_mzML(uploaded_files: list[bytes]) -> None:
@@ -46,6 +39,7 @@ def save_uploaded_mzML(uploaded_files: list[bytes]) -> None:
             return
         
     # Write files from buffer to workspace mzML directory, add to selected files
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
     for f in uploaded_files:
         if f.name not in [f.name for f in mzML_dir.iterdir()] and f.name.endswith("mzML"):
             with open(Path(mzML_dir, f.name), "wb") as fh:
@@ -65,12 +59,15 @@ def copy_local_mzML_files_from_directory(local_mzML_directory: str) -> None:
     Returns:
         None
     """
+    
     # Check if local directory contains mzML files, if not exit early
     if not any(Path(local_mzML_directory).glob("*.mzML")):
         st.warning("No mzML files found in specified folder.")
         return
+    
     # Copy all mzML files to workspace mzML directory, add to selected files
     files = Path(local_mzML_directory).glob("*.mzML")
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
     for f in files:
         if f.name not in mzML_dir.iterdir():
             shutil.copy(f, mzML_dir)
@@ -89,11 +86,11 @@ def load_example_mzML_files() -> None:
         None
     """
     # Copy files from example-data/mzML to workspace mzML directory, add to selected files
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
     for f in Path("example-data", "mzML").glob("*.mzML"):
         shutil.copy(f, mzML_dir)
         add_to_selected_mzML(f.stem)
     #st.success("Example mzML files loaded!")
-
 
 def remove_selected_mzML_files(to_remove: list[str]) -> None:
     """
@@ -105,6 +102,8 @@ def remove_selected_mzML_files(to_remove: list[str]) -> None:
     Returns:
         None
     """
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
+
     # remove all given files from mzML workspace directory and selected files
     for f in to_remove:
         Path(mzML_dir, f+".mzML").unlink()
@@ -122,6 +121,8 @@ def remove_all_mzML_files() -> None:
     Returns:
         None
     """
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
+
     # reset (delete and re-create) mzML directory in workspace
     reset_directory(mzML_dir)
     # reset selected mzML list
@@ -129,7 +130,6 @@ def remove_all_mzML_files() -> None:
     st.success("All mzML files removed!")
 
 ##################### Fasta ########################################################
-fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
 
 def add_to_selected_fasta(filename: str):
     """
@@ -143,6 +143,7 @@ def add_to_selected_fasta(filename: str):
     """
     # Check if file in params selected fasta files, if not add it
     if filename not in st.session_state["selected-fasta-files"]:
+        #st.write("")
         st.session_state["selected-fasta-files"].append(filename)
 
 
@@ -157,9 +158,12 @@ def save_uploaded_fasta(uploaded_files: list[bytes]) -> None:
     Returns:
         None
     """
+    fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
+
     # A list of files is required, since online allows only single upload, create a list
     if st.session_state.location == "online":
         uploaded_files = [uploaded_files]
+
     # If no files are uploaded, exit early
     for f in uploaded_files:
         if f is None:
@@ -184,6 +188,9 @@ def load_example_fasta_files() -> None:
     Returns:
         None
     """
+
+    fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
+
     # Copy files from example-data/fasta to workspace fasta directory, add to selected files
     for f in Path("example-data", "fasta").glob("*.fasta"):
         shutil.copy(f, fasta_dir)
@@ -201,6 +208,8 @@ def copy_local_fasta_files_from_directory(local_fasta_directory: str) -> None:
     Returns:
         None
     """
+    fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
+
     # Check if local directory contains fasta files, if not exit early
     if not any(Path(local_fasta_directory).glob("*.fasta")):
         st.warning("No fasta files found in specified folder.")
@@ -223,6 +232,8 @@ def remove_selected_fasta_files(to_remove: list[str]) -> None:
     Returns:
         None
     """
+    fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
+
     # remove all given files from fasta workspace directory and selected files
     for f in to_remove:
         Path(fasta_dir, f+".fasta").unlink()
@@ -240,6 +251,8 @@ def remove_all_fasta_files() -> None:
     Returns:
         None
     """
+    fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
+
     # reset (delete and re-create) fasta directory in workspace
     reset_directory(fasta_dir)
     # reset selected fasta list

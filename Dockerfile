@@ -5,7 +5,7 @@
 # check if image was build: docker image ls
 # run container: docker run -p 8501:8501 streamlitnuxlapp:latest
 ####### docker-compose up --build
-####### http://localhost:8501 (to access the app)
+####### http://localhost:8501 (to access the app locally)
 ####### docker-compose exec streamlit /bin/bash (to run tools inside container)
 # debug container after build (comment out ENTRYPOINT) and run container with interactive /bin/bash shell
 # prune unused images/etc. to free disc space (e.g. might be needed on gitpod). Use with care.: docker system prune --all --force
@@ -116,10 +116,10 @@ RUN python -m pip install --upgrade pip && python -m pip install -U setuptools n
 RUN cmake -DCMAKE_PREFIX_PATH='/contrib-build/;/usr/;/usr/local' -DOPENMS_CONTRIB_LIBS='/contrib-build/' -DHAS_XSERVER=Off -DBOOST_USE_STATIC=OFF -DPYOPENMS=On ../OpenMS -DPY_MEMLEAK_DISABLE=On
 
 # make and install pyOpenMS
-RUN make -j4 pyopenms
-WORKDIR /openms-build/pyOpenMS
-RUN pip install dist/*.whl
-ENV PATH="/openms-build/bin/:${PATH}"
+#RUN make -j4 pyopenms
+#WORKDIR /openms-build/pyOpenMS
+#RUN pip install dist/*.whl
+#ENV PATH="/openms-build/bin/:${PATH}"
 
 ### TODO: cleanup OpenMS source folder. Probably needs a make install to have share available
 #RUN rm -rf /OpenMS

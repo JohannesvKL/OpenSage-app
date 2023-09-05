@@ -10,13 +10,15 @@ params = page_setup()
 if "selected-result-files" not in st.session_state:
     st.session_state["selected-result-files"] = params.get("selected-result-files", [])
 
+result_dir: Path = Path(st.session_state.workspace, "result-files")
+
 st.title("📊 Result Viewer")
-tabs = ["View Results", "Result files", "upload result files"]
+tabs = ["View Results", "Result files", "Upload result files"]
 
 tabs = st.tabs(tabs)
 
-if st.session_state.location == "local":
-    tabs.append("Files from local folder")
+#if st.session_state.location == "local":
+#    tabs.append("Files from local folder")
 
 with tabs[0]:
 

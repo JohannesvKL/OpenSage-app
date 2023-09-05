@@ -16,11 +16,13 @@ if "selected-mzML-files" not in st.session_state:
     st.session_state["selected-mzML-files"] = params.get("selected-mzML-files", [])
 
 if "selected-fasta-files" not in st.session_state:
-    st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
+     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
 
 load_example_mzML_files()
+
 mzML_files_ = [f.name for f in Path(st.session_state.workspace,
                           "mzML-files").iterdir()]
+
 selected_mzML_file = st.selectbox(
     "choose mzML file",
     [item for item in mzML_files_ if not item.endswith(".csv")]
@@ -29,6 +31,8 @@ selected_mzML_file = st.selectbox(
 )
 
 load_example_fasta_files()
+fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").iterdir()]
+
 selected_fasta_file = st.selectbox(
     "choose fasta file",
     [f.name for f in Path(st.session_state.workspace,
@@ -36,15 +40,20 @@ selected_fasta_file = st.selectbox(
     help="If file not here, please upload at File Upload"
 )
 
-result_dir: Path = Path(st.session_state.workspace, "result-files")
-
 if selected_mzML_file:
     mzML_file_path = str(Path(st.session_state.workspace, "mzML-files", selected_mzML_file))
+
 if selected_fasta_file:
     database_file_path = str(Path(st.session_state.workspace, "fasta-files", selected_fasta_file))
 
+### out file path
+result_dir: Path = Path(st.session_state.workspace, "result-files")
 
-######################## Take NuXL configurations #################################
+mzML_file_name = os.path.basename(mzML_file_path)
+protocol_name = os.path.splitext(mzML_file_name)[0]
+result_path = os.path.join(result_dir, protocol_name + ".idXML")
+
+######################## Take NuXL configurations ini read #################################
 # Define the sections you want to extract
 sections = [
     "fixed",
@@ -139,13 +148,9 @@ with cols[0]:
 with cols[1]:
     scoring  = st.selectbox('Select the scoring method',NuXL_config['scoring']['restrictions'], help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'])
 
-mzML_file_name = os.path.basename(mzML_file_path)
-protocol_name = os.path.splitext(mzML_file_name)[0]
-result_path = os.path.join(result_dir, protocol_name + ".idXML")
-
 ########################## executables #########################
 
-OpenNuXL_exec = os.path.join(os.getcwd(), 'bin', 'OpenNuXL')
+OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
 perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
 
 ##################################### NuXL command ############################
@@ -201,15 +206,14 @@ if st.button("Run-analysis"):
 
     with st.spinner("Running analysis... Please wait until analysis done 😑"):
         if formatted_fixed_modifications == "":
-            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
                         "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
                         "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
                         "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
                         "-modifications:variable", formatted_variable_modifications, "-percolator_executable", perc_exec]
-        
 
         else:
-            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
                         "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
                         "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
                         "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
@@ -221,6 +225,7 @@ if st.button("Run-analysis"):
         #st.code(message)
         
         run_subprocess(args, variables, result_dict)
+        
 
         # Use st.experimental_thread to run the subprocess asynchronously
         #terminate_flag = threading.Event()
