@@ -203,6 +203,7 @@ You can share this unique workspace ID with other people.
             # Local: user can create/remove workspaces as well and see all available
             elif st.session_state.location == "local":
                 # Define callback function to change workspace
+                workspaces_dir = Path("..","workspaces-"+REPOSITORY_NAME)
                 def change_workspace():
                     st.session_state.workspace = Path(
                         workspaces_dir, st.session_state["chosen-workspace"]

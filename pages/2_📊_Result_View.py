@@ -55,7 +55,7 @@ with tabs[0]:
             st.write("CSMs Table")
             #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
             CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}")
-            show_table(CSM_)
+            show_table(CSM_, os.path.splitext(selected_file)[0])
 
         with tabs_[1]:
             # Extracting components from the input filename
@@ -72,10 +72,10 @@ with tabs[0]:
             if protein_path.exists():
                 st.write("PRTs Table")
                 PRTs_section= read_protein_table(protein_path)
-                show_table(PRTs_section[0])
+                show_table(PRTs_section[0], f"{os.path.splitext(new_filename)[0]}_PRTS_list")
 
                 st.write("Protein summary")
-                show_table(PRTs_section[2])
+                show_table(PRTs_section[2], f"{os.path.splitext(new_filename)[0]}_PRTS_summary")
 
                 col1, col2 = st.columns(2)
 
@@ -97,7 +97,7 @@ with tabs[0]:
                         plot_bgcolor='rgb(255, 255, 255)'
                     )
 
-                    show_fig(efficiency_fig, "efficiency_fig")
+                    show_fig(efficiency_fig, f"{os.path.splitext(new_filename)[0]}_efficiency")
 
                 with col2:
                     st.write("Precursor adduct summary")
@@ -114,7 +114,7 @@ with tabs[0]:
                         #title='Percentage of PSMs for Each Index Precursor'
                     )])
 
-                    show_fig(adducts_fig , "adducts_fig ")
+                    show_fig(adducts_fig , f"{os.path.splitext(new_filename)[0]}_adduct_summary")
 
             else:
                 st.warning(f"{protein_path.name} file not exist in current workspace")
