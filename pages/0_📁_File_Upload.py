@@ -29,8 +29,10 @@ with tabs[0]:
             "mzML files", accept_multiple_files=(st.session_state.location == "local"), type=['.mzML'], help="Input file (Valid formats: 'mzML')")
         cols = st.columns(3)
         if cols[1].form_submit_button("Add files to workspace", type="primary"):
-            save_uploaded_mzML(files)
-            #load_example_mzML_files()
+            if not files:
+                st.warning("Upload some files first.")
+            else:
+                save_uploaded_mzML(files)
 
     load_example_mzML_files()
     # Local file upload option: via directory path
@@ -71,10 +73,14 @@ with tabs[0]:
 
 with tabs[1]:
     with st.form("fasta-upload", clear_on_submit=True):
-        file = st.file_uploader("fasta file", type=['.fasta'], help = "The protein database used for identification. (valid formats: 'fasta')")
+        files = st.file_uploader(
+            "fasta file", accept_multiple_files=(st.session_state.location == "local"), type=['.fasta'], help="Input file (Valid formats: 'fasta')")
         cols = st.columns(3)
         if cols[1].form_submit_button("Add fasta to workspace", type="primary"):
-            save_uploaded_fasta(file)
+            if not files:
+                st.warning("Upload some files first.")
+            else:
+                save_uploaded_fasta(files)
 
     load_example_fasta_files()
     # Local file upload option: via directory path

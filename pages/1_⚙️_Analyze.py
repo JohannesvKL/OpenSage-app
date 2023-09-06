@@ -82,19 +82,19 @@ with cols[0]:
     with cols_[1]:
         Missed_cleavages = str(st.number_input("Missed_cleavages",value=int(NuXL_config['missed_cleavages']['default']), help=NuXL_config['missed_cleavages']['description'] + " default: "+ NuXL_config['missed_cleavages']['default']))
         if int(Missed_cleavages) <= 0:
-            st.error("Length must be a positive integer greater than 0.")
+            st.error("Length must be a positive integer greater than 0")
 
 with cols[1]:
     cols_=st.columns(2)
     with cols_[0]:
         peptide_min = str(st.number_input('peptide min length', value=int(NuXL_config['min_size']['default']), help=NuXL_config['min_size']['description'] + " default: "+ NuXL_config['min_size']['default']))
         if int(peptide_min) < 1:
-                st.error("Length must be a positive integer greater than 1.")
+                st.error("Length must be a positive integer greater than 0")
 
     with cols_[1]:
         peptide_max= str(st.number_input('peptide max length', value=int(NuXL_config['max_size']['default']), help=NuXL_config['max_size']['description'] + " default: "+ NuXL_config['max_size']['default']))
         if int(peptide_max) < 1:
-                st.error("Length must be a positive integer greater than 1.")
+                st.error("Length must be a positive integer greater than 1")
 
 cols=st.columns(2)
 with cols[0]:
@@ -148,11 +148,6 @@ with cols[0]:
 with cols[1]:
     scoring  = st.selectbox('Select the scoring method',NuXL_config['scoring']['restrictions'], help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'])
 
-########################## executables #########################
-
-OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
-perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
-
 ##################################### NuXL command ############################
 
 result_dict = {}
@@ -205,19 +200,39 @@ if st.button("Run-analysis"):
         st.experimental_rerun() 
 
     with st.spinner("Running analysis... Please wait until analysis done 😑"):
-        if formatted_fixed_modifications == "":
-            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                        "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                        "-modifications:variable", formatted_variable_modifications, "-percolator_executable", perc_exec]
+        if st.session_state.location == "local":
+
+            OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
+            perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
+
+            if formatted_fixed_modifications == "":
+                args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
+                            "-modifications:variable", formatted_variable_modifications, "-percolator_executable", perc_exec]
+
+            else:
+                args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
+                            "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications, "-percolator_executable", perc_exec]
 
         else:
-            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                        "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                        "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications, "-percolator_executable", perc_exec]
+            if formatted_fixed_modifications == "":
+                args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
+                            "-modifications:variable", formatted_variable_modifications]
+
+            else:
+                args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
+                            "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications]
         
         variables = []  # Add any additional variables needed for the subprocess (if any)
 

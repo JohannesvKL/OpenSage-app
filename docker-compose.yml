@@ -1,7 +1,7 @@
 version: "3"
 services:
   streamlit:
-    build: 
+    build: .
     command: "streamlit run src/monitor.py --server.enableCORS false --server.maxUploadSize 10000 --server.maxMessageSize 10000" ### for checking as local add local
     ports:
       - "8501:8501"
