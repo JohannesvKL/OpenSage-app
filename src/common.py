@@ -255,6 +255,13 @@ You can share this unique workspace ID with other people.
                 img_formats,
                 img_formats.index(params["image-format"]), key="image-format"
             )
+
+            table_formats = ["tsv", "csv", "xlsx"]
+            st.selectbox(
+                "table export format",
+                table_formats,
+                table_formats.index(params["table-format"]), key="table-format"
+            )
             # Button to reset parameters, sidebar widgets are settings and will not be resettet!
             if st.button("⚠️ Load default parameters"):
                 params = load_params(default=True)
@@ -301,11 +308,33 @@ def show_table(df: pd.DataFrame, download_name: str = "") -> None:
     st.dataframe(df, use_container_width=True)
     # Show download button with the given download name for the table if name is given
     if download_name:
-        st.download_button(
-            "Download Table",
-            df.to_csv(sep="\t").encode("utf-8"),
-            download_name.replace(" ", "-") + ".tsv",
-        )
+        if st.session_state["table-format"] == "csv":
+            st.download_button(
+                "Download Table",
+                df.to_csv(sep=",").encode("utf-8"),
+                download_name.replace(" ", "-") + ".csv", help="download table in csv format"
+            )
+        elif st.session_state["table-format"] == "tsv":
+            st.download_button(
+                "Download Table",
+                df.to_csv(sep="\t").encode("utf-8"),
+                download_name.replace(" ", "-") + ".tsv", help="download table in tsv format"
+            )
+        elif st.session_state["table-format"] == "xlsx":
+            import io
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, sheet_name='Sheet1', index=False)
+            output.seek(0)
+            st.download_button(
+                "Download Table",
+                output,
+                download_name.replace(" ", "-") + ".xlsx", help="download table in xlsx format"
+            )
+
+            # Display the download button with the binary Excel data
+            #st.download_button("Download Table", df.to_excel(excel_writer, index=False).encode("utf-8"), file_format="xlsx")
+
 
 
 def show_fig(fig, download_name: str, container_width: bool = True) -> None:
