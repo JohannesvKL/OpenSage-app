@@ -199,7 +199,8 @@ if st.button("Run-analysis"):
         st.warning("Process terminated. The analysis may not be complete.")
         st.experimental_rerun() 
 
-    with st.spinner("Running analysis... Please wait until analysis done 😑"):
+    #with st.spinner("Running analysis... Please wait until analysis done 😑"):
+    with st.status("Running analysis... Please wait until analysis done 😑"):
         if st.session_state.location == "local":
 
             OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
@@ -250,7 +251,7 @@ if st.button("Run-analysis"):
 
 
     if result_dict["success"]:
-        st.success(f"Analyze done successfully of **{protocol_name}**")
+        #st.success(f"Analyze done successfully of **{protocol_name}**")
         # Save the log to a text file in the result_dir
         log_file_path = result_dir / f"{protocol_name}_log.txt"
         with open(log_file_path, "w") as log_file:
