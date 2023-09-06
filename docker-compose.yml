@@ -10,4 +10,4 @@ services:
 
 # docker-compose up --build (This command will build the Docker image using the provided Dockerfile and start the container)
 # Then can access via http://localhost:8501
-# docker-compose exec streamlit /bin/bash (to run tools inside container)<
+# docker-compose exec streamlit /bin/bash (to run tools inside container)

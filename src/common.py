@@ -176,7 +176,8 @@ def render_sidebar(params: dict[str, Any], page: str = "") -> None:
         if page == "main":
             st.markdown("🖥️ **Workspaces**")
             # Define workspaces directory outside of repository
-            workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
+            workspaces_dir = Path("workspaces-"+REPOSITORY_NAME)
+            #st.write("workspace dir", workspaces_dir)
             # Online: show current workspace name in info text and option to change to other existing workspace
             if st.session_state.location == "online":
                 # Change workspace...
@@ -184,6 +185,7 @@ def render_sidebar(params: dict[str, Any], page: str = "") -> None:
                 if st.button("**Enter Workspace**") and new_workspace:
                     path = Path(
                         workspaces_dir, new_workspace)
+                    #st.write("path to enter: ", path)
                     if path.exists():
                         st.session_state.workspace = path
                     else:
