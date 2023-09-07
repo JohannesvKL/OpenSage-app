@@ -1,6 +1,17 @@
 import xml.etree.ElementTree as ET
 
 def ini2dict(path: str, sections: list):
+    """
+    ini file to dictionary.
+
+    Args:
+        path : path of ini file
+        section: list of section, which will add into dictionary.
+
+    Returns:
+        config dictionary which stores provided section list
+    """
+
     # Parse the XML configuration
     tree = ET.parse(path)
     root = tree.getroot()
@@ -8,7 +19,7 @@ def ini2dict(path: str, sections: list):
     # Initialize an empty dictionary to store the extracted information
     config_dict = {}
     
-    
+    ## dictionaries used to capture these variable from sections
     precursor_mass_tolerance = {}
     fragment_mass_tolerance = {}
     precursor_mass_tolerance_unit = {}
@@ -32,6 +43,8 @@ def ini2dict(path: str, sections: list):
                 "description": node_desc,
                 "restrictions": restrictions_list
             }
+
+            ## because the mass tolerance same section in ini file, so need to validate from descriptions
             
             if "Precursor mass tolerance" in node_desc:  
                 entry["name"] = "precursor_mass_tolerance"
@@ -52,10 +65,12 @@ def ini2dict(path: str, sections: list):
         # Store the entry in the section dictionary
         config_dict[section_name] = entry
 
+        ## add mass tolerance dictionaries to config
         if "mass_tolerance" in section_name:
             config_dict["precursor_mass_tolerance"] = precursor_mass_tolerance
             config_dict["fragment_mass_tolerance"] = fragment_mass_tolerance
             
+        ## add mass tolerance unit dictionaries to config
         if "mass_tolerance_unit" in section_name:
             config_dict["precursor_mass_tolerance_unit"] = precursor_mass_tolerance_unit
             config_dict["fragment_mass_tolerance_unit"] = fragment_mass_tolerance_unit

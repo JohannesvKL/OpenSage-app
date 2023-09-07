@@ -1,7 +1,13 @@
+import io
+import os
 import shutil
-from pathlib import Path
-
+import base64
+import pandas as pd
 import streamlit as st
+from io import StringIO
+from pathlib import Path
+from zipfile import ZipFile
+from pyopenms import IdXMLFile
 from src.common import reset_directory
 
 def add_to_result(filename: str):
@@ -37,14 +43,7 @@ def load_example_result_files() -> None:
         #f.name will pass with format extention
         add_to_result(f.name)
     #st.success("Example result files loaded!")
-
-def list_result_example_files() -> None:
-
-    list_result_example_files = []
-    for f in Path("example-data", "idXMLs").glob("*"):
-        list_result_example_files.append(f.name)
-    return list_result_example_files
-    
+    #     
 
 def remove_selected_result_files(to_remove: list[str]) -> None:
     """
@@ -59,12 +58,11 @@ def remove_selected_result_files(to_remove: list[str]) -> None:
 
     result_dir: Path = Path(st.session_state.workspace, "result-files")
 
-    # remove all given files from result workspace directory and selected files
-    #st.write("print all files in session state: ", st.session_state["selected-result-files"])
+    # remove all given selected files from result workspace directory
     for f in to_remove:
-        Path(result_dir, f).unlink() ##remove the specified format 
-        #st.write("remove_selected_result_files: ", f)
-        st.session_state["selected-result-files"].remove(f)
+        # deleted files
+        Path(result_dir, f).unlink() 
+        #st.session_state["selected-result-files"].remove(f)
     st.success("Selected result files removed!")
 
 
@@ -113,14 +111,6 @@ def copy_local_result_files_from_directory(local_result_directory: str) -> None:
         add_to_result(f.name) 
     #st.success("Successfully added local files!")
 
-import base64
-def download_file(file_path, download_link_text):
-    with open(file_path, "rb") as file:
-        file_content = file.read()
-    b64_file_content = base64.b64encode(file_content).decode('utf-8')
-    href = f'<a href="data:application/octet-stream;base64,{b64_file_content}" download="{download_link_text}">Download File</a>'
-    return href
-
 def save_uploaded_result(uploaded_files: list[bytes]) -> None:
     """
     Saves uploaded result files to the result-files directory.
@@ -137,6 +127,7 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
     # A list of files is required, since online allows only single upload, create a list
     if st.session_state.location == "online":
         uploaded_files = [uploaded_files]
+
     # If no files are uploaded, exit early
     for f in uploaded_files:
         if f is None:
@@ -145,9 +136,11 @@ def save_uploaded_result(uploaded_files: list[bytes]) -> None:
         
     # Write files from buffer to workspace mzML directory, add to selected files
     for f in uploaded_files:
+        #check if file not in result_dir and extension with .idXML/.tsv
         if f.name not in [f.name for f in result_dir.iterdir()] and (f.name.endswith(".idXML") or f.name.endswith(".tsv")):
             with open(Path(result_dir, f.name), "wb") as fh:
                 fh.write(f.getbuffer())
+        #add to selected result files in session 
         add_to_result(Path(f.name).stem)
     st.success("Successfully added uploaded files!")
 
@@ -177,12 +170,35 @@ def add_this_result_file(to_add: str, from_path: Path)-> None:
             # Copy the file from path dir to result directory
             shutil.copy(from_file_path, result_dir)
 
-################# download all results file ####################
-import io
-from zipfile import ZipFile
+def list_result_example_files() -> None:
+    """
+    Get all result examples file
 
-## create zip files of all available files in result folder
+    Args:
+        None
+
+    Returns:
+        List of all result example files names 
+
+    """
+    list_result_example_files = []
+    #iterate over example-data/idXMLS files
+    for f in Path("example-data", "idXMLs").glob("*"):
+        #append the name to list with extension
+        list_result_example_files.append(f.name)
+
+    return list_result_example_files
+
 def create_zip_and_get_base64_():
+    """
+    create decoded zip format of all result-dir files
+
+    Args:
+        None
+
+    Returns:
+        zip content file 
+    """
 
     result_dir: Path = Path(st.session_state.workspace, "result-files")
 
@@ -200,8 +216,17 @@ def create_zip_and_get_base64_():
     
     return b64_zip_content
 
-## create zip file of selected files
 def create_zip_and_get_base64(file_paths):
+    """
+    create zip file of all selected files
+
+    Args:
+       file_paths:  List of result files paths to download.
+
+    Returns:
+        zip file content
+    """
+
     # Create a temporary in-memory zip file
     buffer = io.BytesIO()
     with ZipFile(buffer, 'w') as zip_file:
@@ -228,119 +253,124 @@ def download_selected_result_files(to_download: list[str], link_name: str) -> No
     """
 
     result_dir: Path = Path(st.session_state.workspace, "result-files")
-
+    #make full file paths
     file_paths = [result_dir / f"{file_name}" for file_name in to_download]  # Replace "your_extension" with the actual file extension
-    #st.write("to_download", to_download)
+    #creta zip content file
     b64_zip_content = create_zip_and_get_base64(file_paths)
+    #create href for download
     href = f'<a href="data:application/zip;base64,{b64_zip_content}" download="selected_files.zip">{link_name}</a>'
+    #show on page
     st.markdown(href, unsafe_allow_html=True)
 
+###################################### deal with .idXML file ##################################
 
-###################################
-def remove_and_get_unique_elements(input_list):
-    # Remove strings containing "_proteins0.0100_XLs.tsv" and "_0.0100_XLs.idXML"
-    filtered_list = [item for item in input_list if "_proteins0.0100_XLs.tsv" not in item or "_0.0100_XLs.idXML" not in item]
-
-    # Return the final unique elements
-    unique_elements = list(set(filtered_list))
-
-    return unique_elements
-
-
-
-######################################
-import pandas as pd
-from pyopenms import IdXMLFile
-
-
-# convert every string col into an int or float if possible
 def strToFloat(df):
-  for col in df:
-    try:
-      df[col] = [float(i) for i in df[col]]
-    except ValueError:
-      continue
-  return df# convert every string col into an int or float if possible
+    """
+    convert every string col into an int or float if possible of given dataframe 
 
+    Args:
+        df: dataframe
+
+    Returns:
+        df: dataframe modified accordingly
+    """
+    for col in df:
+        try:
+            #convert string col to float
+            df[col] = [float(i) for i in df[col]]
+        except ValueError:
+            continue
+    return df
 
 def readAndProcessIdXML(input_file, top=1):
-  """
-  convert the (.idXML) format identification file to dataframe
-  """
-  prot_ids = []; pep_ids = []
-  IdXMLFile().load(str(input_file), prot_ids, pep_ids)
-  meta_value_keys = []
-  rows = []
-  #st.write("len of pep_ids:", len(pep_ids))
-  if len(pep_ids)>0:
-    for peptide_id in pep_ids:
-        spectrum_id = peptide_id.getMetaValue("spectrum_reference")
-        scan_nr = spectrum_id[spectrum_id.rfind('=') + 1 : ]
+    """
+    convert the (.idXML) format identification file to dataframe
 
-        hits = peptide_id.getHits()
+    Args:
+        input_file: idXML file path 
+        top: top hits (dafault 1)
 
-        psm_index = 1
-        for h in hits:
-            if psm_index > top:
-                break
-            charge = h.getCharge()
-            score = h.getScore()
-            z2 = 0; z3 = 0; z4 = 0; z5 = 0
+    Returns:
+        df: dataframe (.idXML -> dataframe)
+    """
+    prot_ids = []; pep_ids = []
+    IdXMLFile().load(str(input_file), prot_ids, pep_ids)
+    meta_value_keys = []
+    rows = []
+    #st.write("len of pep_ids:", len(pep_ids))
+    if len(pep_ids)>0:
+        for peptide_id in pep_ids:
+            spectrum_id = peptide_id.getMetaValue("spectrum_reference")
+            scan_nr = spectrum_id[spectrum_id.rfind('=') + 1 : ]
 
-            if charge == 2:
-                z2 = 1
-            if charge == 3:
-                z3 = 1
-            if charge == 4:
-                z4 = 1
-            if charge == 5:
-                z5 = 1
-            if "target" in h.getMetaValue("target_decoy"):
-                label = 1
-            else:
-                label = 0
-            sequence = h.getSequence().toString()
-            if len(meta_value_keys) == 0: # fill meta value keys on first run
-                h.getKeys(meta_value_keys)
-                meta_value_keys = [x.decode() for x in meta_value_keys]
-                all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions'] + meta_value_keys
-                #print(all_columns)
-            # static part
-            accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
+            hits = peptide_id.getHits()
 
-            row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions]
-            # scores in meta values
-            for k in meta_value_keys:
-                s = h.getMetaValue(k)
-                if type(s) == bytes:
-                    s = s.decode()
-                row.append(s)
-            rows.append(row)
-            psm_index += 1
-            break; # parse only first hit
-  
-    df =pd.DataFrame(rows, columns=all_columns)
-    convert_dict = {'SpecId': str,
-                    'PSMId': int,
-                    'Label': int,
-                    'Score': float,
-                    'ScanNr': int,
-                    'peplen': int                
-                }
+            psm_index = 1
+            for h in hits:
+                if psm_index > top:
+                    break
+                charge = h.getCharge()
+                score = h.getScore()
+                z2 = 0; z3 = 0; z4 = 0; z5 = 0
+
+                if charge == 2:
+                    z2 = 1
+                if charge == 3:
+                    z3 = 1
+                if charge == 4:
+                    z4 = 1
+                if charge == 5:
+                    z5 = 1
+                if "target" in h.getMetaValue("target_decoy"):
+                    label = 1
+                else:
+                    label = 0
+                sequence = h.getSequence().toString()
+                if len(meta_value_keys) == 0: # fill meta value keys on first run
+                    h.getKeys(meta_value_keys)
+                    meta_value_keys = [x.decode() for x in meta_value_keys]
+                    all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions'] + meta_value_keys
+                    #print(all_columns)
+                # static part
+                accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
+
+                row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions]
+                # scores in meta values
+                for k in meta_value_keys:
+                    s = h.getMetaValue(k)
+                    if type(s) == bytes:
+                        s = s.decode()
+                    row.append(s)
+                rows.append(row)
+                psm_index += 1
+                break; # parse only first hit
     
-    df = df.astype(convert_dict)
-    return df
+        df =pd.DataFrame(rows, columns=all_columns)
+        convert_dict = {'SpecId': str,
+                        'PSMId': int,
+                        'Label': int,
+                        'Score': float,
+                        'ScanNr': int,
+                        'peplen': int                
+                    }
+        
+        df = df.astype(convert_dict)
+        return df
+    
+    else: 
+        return None
   
-  else: 
-      return None
-  
-
-######################### Deal with TSV file of proteins #######
-from io import StringIO
+######################### deal with (.tsv) file of proteins #######
 
 def read_protein_table(input_file):
     """
     convert the (.tsv) protein output table to dataframe
+
+    Args:
+        input_file: input file of protein output (.tsv) format1
+
+    Returns:
+        section_dfs: list of dataframes contain 4 dataframe
     """
     section_dfs = []
     current_section = []

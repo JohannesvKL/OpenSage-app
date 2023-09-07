@@ -1,8 +1,6 @@
 from pathlib import Path
-
 import streamlit as st
 import pandas as pd
-
 from src.common import *
 from src.fileupload import *
 
@@ -12,41 +10,38 @@ params = page_setup()
 if "selected-mzML-files" not in st.session_state:
     st.session_state["selected-mzML-files"] = params["selected-mzML-files"]
 
+# Make sure "selected-fasta-files" is in session state
 if "selected-fasta-files" not in st.session_state:
     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
 
+#title of page
 st.title("📂 File Upload")
 
+#directories of current session state : "mzML-files", "fasta-files"
 mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
 fasta_dir: Path = Path(st.session_state.workspace, "fasta-files")
 
+#tabs on page
 tabs = ["mzML files", "Fasta files"]
 tabs = st.tabs(tabs)
 
+#mzML files tab
 with tabs[0]:
+    #create form of mzML-upload
     with st.form("mzML-upload", clear_on_submit=True):
+        #create file uploader to take mzML files
         files = st.file_uploader(
             "mzML files", accept_multiple_files=(st.session_state.location == "local"), type=['.mzML'], help="Input file (Valid formats: 'mzML')")
         cols = st.columns(3)
+        #file uploader submit button
         if cols[1].form_submit_button("Add files to workspace", type="primary"):
             if not files:
                 st.warning("Upload some files first.")
             else:
                 save_uploaded_mzML(files)
 
+    #load example mzML files to current session state
     load_example_mzML_files()
-    # Local file upload option: via directory path
-    #if st.session_state.location == "local":
-    #    with tabs[2]:
-    #        # with st.form("local-file-upload"):
-    #        st.markdown("Short information text about the example data.")
-    #        local_mzML_dir = st.text_input(
-    #            "path to folder with mzML files")
-    #        # raw string for file paths
-    #        local_mzML_dir = r"{}".format(local_mzML_dir)
-    #        cols = st.columns(3)
-    #        if cols[1].button("Copy files to workspace", type="primary", disabled=(local_mzML_dir == "")):
-    #            copy_local_mzML_files_from_directory(local_mzML_dir)'''
 
     if any(Path(mzML_dir).iterdir()):
         v_space(2)
@@ -62,38 +57,32 @@ with tabs[0]:
             to_remove = st.multiselect("select mzML files",
                                     options=[f.stem for f in sorted(mzML_dir.iterdir())])
             c1, c2 = st.columns(2)
+            #Remove selected files
             if c2.button("Remove **selected**", type="primary", disabled=not any(to_remove)):
                 remove_selected_mzML_files(to_remove)
                 st.experimental_rerun()
-
+            #Remove all files
             if c1.button("⚠️ Remove **all**", disabled=not any(mzML_dir.iterdir())):
                 remove_all_mzML_files()
                 st.experimental_rerun()
-                #load_example_mzML_files()
 
+#fasta files tab
 with tabs[1]:
+    #create form of fasta-upload
     with st.form("fasta-upload", clear_on_submit=True):
+        #create file uploader to take fasta files
         files = st.file_uploader(
             "fasta file", accept_multiple_files=(st.session_state.location == "local"), type=['.fasta'], help="Input file (Valid formats: 'fasta')")
         cols = st.columns(3)
+        #file uploader submit button
         if cols[1].form_submit_button("Add fasta to workspace", type="primary"):
             if not files:
                 st.warning("Upload some files first.")
             else:
                 save_uploaded_fasta(files)
 
+    #load example fasta files to current session state
     load_example_fasta_files()
-    # Local file upload option: via directory path
-    #if st.session_state.location == "local":
-    #    with tabs[2]:
-    #        # with st.form("local-file-upload"):
-    #        local_fasta_dir = st.text_input(
-    #            "path to folder with fasta files")
-    #        # raw string for file paths
-    #        local_fasta_dir = r"{}".format(local_fasta_dir)
-    #        cols = st.columns(3)
-    #        if cols[1].button("Copy fasta to workspace", type="primary", disabled=(local_fasta_dir == "")):
-    #            copy_local_fasta_files_from_directory(local_fasta_dir)
 
     if any(Path(fasta_dir).iterdir()):
         v_space(2)
@@ -108,13 +97,13 @@ with tabs[1]:
             to_remove = st.multiselect("select fasta files",
                                     options=[f.stem for f in sorted(fasta_dir.iterdir())])
             c1, c2 = st.columns(2)
+            #Remove selected files
             if c2.button("Remove **selected** from workspace", type="primary", disabled=not any(to_remove)):
                 remove_selected_fasta_files(to_remove)
                 st.experimental_rerun()
-
+            #Remove all files
             if c1.button("⚠️ Remove **all** from workspace", disabled=not any(fasta_dir.iterdir())):
                 remove_all_fasta_files()
                 st.experimental_rerun()
 
-        
 save_params(params)

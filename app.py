@@ -12,6 +12,7 @@ def main():
         """# OpenNuXL"""
     )
     st.image("assets/NuXL_image.png")
+    #In docker, OpenMS-app (executable) can be downloadable from github
     if Path("OpenMS-App.zip").exists():
         st.markdown("## Installation")
         with open("OpenMS-App.zip", "rb") as file:
@@ -77,12 +78,16 @@ else:
 
     # WORK LIKE MULTIPAGE APP         
     if 'controllo' not in st.session_state or st.session_state['controllo'] == False:
+        #delete pages
         delete_page("app", "File_Upload")
         delete_page("app", "Analyze")
         delete_page("app", "Result_View")
+        #apply captcha
         captcha_control()
     else:
+        #run main
         main()
+        #add all pages back
         add_page("app", "File_Upload")
         add_page("app", "Analyze")
         add_page("app", "Result_View")
