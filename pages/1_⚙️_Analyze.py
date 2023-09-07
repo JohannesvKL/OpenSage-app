@@ -239,7 +239,6 @@ if st.button("Run-analysis"):
 
         #message = f"Running '{' '.join(args)}'"
         #st.code(message)
-        
         run_subprocess(args, variables, result_dict)
         
 
@@ -252,6 +251,12 @@ if st.button("Run-analysis"):
 
     if result_dict["success"]:
         #st.success(f"Analyze done successfully of **{protocol_name}**")
+        #add .mzML.ambigious_masses.csv in result directory 
+        add_this_result_file(f"{protocol_name}.mzML.ambigious_masses.csv", Path(st.session_state.workspace, "mzML-files"))
+        
+        #remove .mzML.ambigious_masses.csv from mzML directory
+        remove_this_mzML_file(f"{protocol_name}.mzML.ambigious_masses.csv")
+
         # Save the log to a text file in the result_dir
         log_file_path = result_dir / f"{protocol_name}_log.txt"
         with open(log_file_path, "w") as log_file:

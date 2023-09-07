@@ -226,6 +226,7 @@ with tabs[2]:
         cols = st.columns(3)
         if cols[1].form_submit_button("Add files to workspace", type="primary"):
             save_uploaded_result(files)
+            #st.experimental_rerun()
 
 # At the end of each page, always save parameters (including any changes via widgets with key)
 save_params(params)

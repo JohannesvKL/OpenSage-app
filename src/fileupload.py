@@ -129,6 +129,22 @@ def remove_all_mzML_files() -> None:
     st.session_state["selected-mzML-files"] = []
     st.success("All mzML files removed!")
 
+def remove_this_mzML_file(to_remove: str) -> None:
+    """
+    Remove mzML file (full file name with extension like Example_RNA_UV_XL.mzML.ambigious_masses.csv) from the mzML directory.
+
+    Args:
+        to_remove (str): mzML file name to remove.
+
+    Returns:
+        None
+    """
+    mzML_dir: Path = Path(st.session_state.workspace, "mzML-files")
+    to_remove_path = Path(mzML_dir, to_remove)
+    for x in mzML_dir.iterdir():
+        if x == to_remove_path:
+            to_remove_path.unlink()
+
 ##################### Fasta ########################################################
 
 def add_to_selected_fasta(filename: str):

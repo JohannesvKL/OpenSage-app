@@ -121,6 +121,62 @@ def download_file(file_path, download_link_text):
     href = f'<a href="data:application/octet-stream;base64,{b64_file_content}" download="{download_link_text}">Download File</a>'
     return href
 
+def save_uploaded_result(uploaded_files: list[bytes]) -> None:
+    """
+    Saves uploaded result files to the result-files directory.
+
+    Args:
+        uploaded_files (List[bytes]): List of uploaded result files (idXML and tsv).
+
+    Returns:
+        None
+    """
+
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
+    # A list of files is required, since online allows only single upload, create a list
+    if st.session_state.location == "online":
+        uploaded_files = [uploaded_files]
+    # If no files are uploaded, exit early
+    for f in uploaded_files:
+        if f is None:
+            st.warning("Upload some files first.")
+            return
+        
+    # Write files from buffer to workspace mzML directory, add to selected files
+    for f in uploaded_files:
+        if f.name not in [f.name for f in result_dir.iterdir()] and (f.name.endswith(".idXML") or f.name.endswith(".tsv")):
+            with open(Path(result_dir, f.name), "wb") as fh:
+                fh.write(f.getbuffer())
+        add_to_result(Path(f.name).stem)
+    st.success("Successfully added uploaded files!")
+
+def add_this_result_file(to_add: str, from_path: Path)-> None:
+    """
+    add result file (full file name with extension like Example_RNA_UV_XL.mzML.ambigious_masses.csv)
+
+    Args:
+        to_add (str): any file want to add in result files.
+
+    Returns:
+        None
+    """
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+    to_add_path = Path(result_dir, to_add)
+
+    ## if file already in result_dir delete it 
+    for x in result_dir.iterdir():
+        if x == to_add_path:
+            to_add_path.unlink()
+
+    # Check if the file exists in the mzML directory
+    from_file_path = Path(from_path, to_add)
+    if from_file_path.exists():
+        #check for not same file
+        if to_add not in [f.name for f in result_dir.iterdir()]:
+            # Copy the file from path dir to result directory
+            shutil.copy(from_file_path, result_dir)
+
 ################# download all results file ####################
 import io
 from zipfile import ZipFile
@@ -348,48 +404,3 @@ def read_protein_table(input_file):
         section_dfs.append(section_df)
 
     return section_dfs
-
-def add_to_selected_result_files(filename: str):
-    """
-    Add the given filename to the list of selected result files.
-
-    Args:
-        filename (str): The filename to be added to the list of selected result-files.
-
-    Returns:
-        None
-    """
-    # Check if file in params selected mzML files, if not add it
-    if filename not in st.session_state["selected-result-files"]:
-        st.session_state["selected-result-files"].append(filename)
-
-def save_uploaded_result(uploaded_files: list[bytes]) -> None:
-    """
-    Saves uploaded result files to the result-files directory.
-
-    Args:
-        uploaded_files (List[bytes]): List of uploaded result files (idXML and tsv).
-
-    Returns:
-        None
-    """
-
-    result_dir: Path = Path(st.session_state.workspace, "result-files")
-
-    # A list of files is required, since online allows only single upload, create a list
-    if st.session_state.location == "online":
-        uploaded_files = [uploaded_files]
-    # If no files are uploaded, exit early
-    for f in uploaded_files:
-        if f is None:
-            st.warning("Upload some files first.")
-            return
-        
-    # Write files from buffer to workspace mzML directory, add to selected files
-    for f in uploaded_files:
-        if f.name not in [f.name for f in result_dir.iterdir()] and (f.name.endswith(".idXML") or f.name.endswith(".tsv")):
-            with open(Path(result_dir, f.name), "wb") as fh:
-                fh.write(f.getbuffer())
-        add_to_selected_result_files(Path(f.name).stem)
-    st.success("Successfully added uploaded files!")
-    st.experimental_rerun()
