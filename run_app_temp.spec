@@ -16,6 +16,7 @@ a = Analysis(
 	    ("./myenv/Lib/site-packages/pyopenms", "./pyopenms/"),
         ("./myenv/Lib/site-packages/captcha", "./captcha/"),
         ("./myenv/Lib/site-packages/pyarrow", "./pyarrow/"), 
+        ("./myenv/lib/site-packages/xlsxwriter", "./xlsxwriter/")
     ],
     hiddenimports=[],
     hookspath=['./hooks'],

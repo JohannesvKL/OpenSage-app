@@ -9,5 +9,6 @@ numpy
 plotly
 pyopenms
 captcha 
+xlsxwriter
 ## for pyopenms nightly
 # --index-url https://pypi.cs.uni-tuebingen.de/simple/
