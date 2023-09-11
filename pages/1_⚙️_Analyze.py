@@ -152,17 +152,12 @@ with cols[1]:
     if int(length) <= -1:
         st.error("Length must be a positive integer.")
 
-
 cols=st.columns(2)
 with cols[0]:
     fixed_modification = st.multiselect('Select fixed modifications:', NuXL_config['fixed']['restrictions'], help=NuXL_config['fixed']['description'] + " default: "+ NuXL_config['fixed']['default'])
-    formatted_fixed_modifications = ' '.join([f'{item.strip()}' for item in fixed_modification])
 
 with cols[1]: 
-    Variable_modification = st.multiselect('Select variable modifications:', NuXL_config['variable']['restrictions'], default='Oxidation (M)', help=NuXL_config['variable']['description'] + " default: "+ NuXL_config['variable']['default'])
-    if not Variable_modification:
-        Variable_modification = ['Oxidation (M)']
-    formatted_variable_modifications = ' '.join([f'{item.strip()}' for item in Variable_modification])
+    variable_modification = st.multiselect('Select variable modifications:', NuXL_config['variable']['restrictions'], help=NuXL_config['variable']['description'] + " default: "+ NuXL_config['variable']['default'])
     
 cols=st.columns(2)
 with cols[0]:
@@ -254,53 +249,49 @@ if st.button("Run-analysis"):
 
     #with st.spinner("Running analysis... Please wait until analysis done 😑"): #without status/ just spinner button
     with st.status("Running analysis... Please wait until analysis done 😑"):
-        #if session state is local
+        #If session state is local
         if st.session_state.location == "local":
-            #if local in current directory of app  like bin and percolator folder
+
+            #If local in current directory of app  like bin and percolator folder
             OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
             perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
             
-            #if not fixed modification given
-            if formatted_fixed_modifications == "":
-                args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                            "-modifications:variable", formatted_variable_modifications, "-percolator_executable", perc_exec]
-                
-            #if with fixed modification
-            else:
-                args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                            "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications, "-percolator_executable", perc_exec]
+            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                        "-peptide:min_size", peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme, 
+                        "-modifications:variable_max_per_peptide", Variable_max_per_peptide
+                        ]
 
-        #if session state is online/docker
-        else:
+            args.extend(["-percolator_executable", perc_exec])
 
-            #if not fixed modification given
-            if formatted_fixed_modifications == "":
-                args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                            "-modifications:variable", formatted_variable_modifications]
-                
-            #if with fixed modification
-            else:
-                args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                            "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                            "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                            "-peptide:min_size",peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                            "-modifications:variable", formatted_variable_modifications,  "-modifications:fixed", formatted_fixed_modifications]
+        #If session state is online/docker
+        else:     
+
+            #In docker it executable on path
+            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
+                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
+                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
+                        "-peptide:min_size", peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
+                        "-modifications:variable_max_per_peptide", Variable_max_per_peptide
+                        ]
+        
+        #If variable modification provided
+        if variable_modification: 
+            args.extend(["-modifications:variable"])
+            args.extend(variable_modification)
+
+        #If fixed modification provided
+        if fixed_modification: 
+            args.extend(["-modifications:fixed"])
+            args.extend(fixed_modification)
         
         # Add any additional variables needed for the subprocess (if any)
         variables = []  
 
         #want to see the command values and argues
-        #message = f"Running '{' '.join(args)}'"
-        #st.code(message)
+        message = f"Running '{' '.join(args)}'"
+        st.code(message)
 
         #run subprocess command
         run_subprocess(args, variables, result_dict)
