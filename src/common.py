@@ -418,7 +418,7 @@ def reset_directory(path: Path) -> None:
     """
     shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
-
+    
 
 # General warning/error messages
 WARNINGS = {

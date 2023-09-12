@@ -2,7 +2,8 @@ import streamlit as st
 from src.common import *
 from src.result_files import *
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
+from src.view import plot_ms2_spectrum
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, ColumnsAutoSizeMode
 
 
 params = page_setup()
@@ -43,9 +44,50 @@ with tabs[0]:
             #st.write("CSMs Table")
             #take all CSMs as dataframe
             CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}")
-            #show and download button of all CSMs
-            show_table(CSM_, os.path.splitext(selected_file)[0])
 
+            #check if dataframe is None
+            if CSM_ is None: 
+                st.warning("No CSMs found in selected idXML file")
+            else:
+                # provide dataframe
+                gb = GridOptionsBuilder.from_dataframe(CSM_[list(CSM_.columns.values)])
+
+                # configure selection
+                gb.configure_selection(selection_mode="single", use_checkbox=True)
+                gb.configure_side_bar()
+                gb.configure_pagination(enabled=True, paginationAutoPageSize=False, paginationPageSize=10)
+                gridOptions = gb.build()
+                
+                data = AgGrid(CSM_,
+                            gridOptions=gridOptions,
+                            enable_enterprise_modules=True,
+                            allow_unsafe_jscode=True,
+                            update_mode=GridUpdateMode.SELECTION_CHANGED,
+                            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS)
+
+                #download table
+                download_table(CSM_, f"{os.path.splitext(selected_file)[0]}")
+                #select row by user
+                selected_row = data["selected_rows"]
+
+                if selected_row:
+
+                    # Create a dictionary of annotation features
+                    annotation_data = {'intarray': [float(value) for value in {selected_row[0]['intensities']}.pop().split(',')],
+                            'mzarray': [float(value) for value in {selected_row[0]['mz_values']}.pop().split(',')],
+                            'anotarray': [str(value) for value in {selected_row[0]['ions']}.pop().split(',')]
+                        }
+
+                    # Create the DataFrame
+                    annotation_df = pd.DataFrame(annotation_data)
+                    # title of spectra
+                    spectra_name = os.path.splitext(selected_file)[0] +" Scan# " + str({selected_row[0]['ScanNr']}).strip('{}') + " Pep: " + str({selected_row[0]['Peptide']}).strip('{}\'') +  " + " +str ({selected_row[0]['NuXL:NA']}).strip('{}\'')
+                    # generate ms2 spectra
+                    fig = plot_ms2_spectrum(annotation_df, spectra_name, "black")
+                    #show figure
+                    show_fig(fig,  f"{os.path.splitext(selected_file)[0]}_scan_{str({selected_row[0]['ScanNr']}).strip('{}')}")
+                
+                            
         #with PRTs Table
         with tabs_[1]:
             # Extracting components from the input filename to show the result of corresponding proteins file

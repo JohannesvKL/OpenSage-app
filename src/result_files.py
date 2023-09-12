@@ -329,12 +329,28 @@ def readAndProcessIdXML(input_file, top=1):
                 if len(meta_value_keys) == 0: # fill meta value keys on first run
                     h.getKeys(meta_value_keys)
                     meta_value_keys = [x.decode() for x in meta_value_keys]
-                    all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions'] + meta_value_keys
+                    all_columns = ['SpecId','PSMId','Label','Score','ScanNr','Peptide','peplen','ExpMass','charge2','charge3','charge4','charge5','accessions', 'intensities', 'mz_values','ions'] + meta_value_keys
                     #print(all_columns)
                 # static part
                 accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
 
-                row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions]
+                #get peak annotations
+                peak_annotation = h.getPeakAnnotations()
+                intensity_values_ = []  # To store peak.intensity values
+                mz_values_ = []  # To store peak.mz values
+                annotations_ = [] # To store ions annotations
+
+                for peak in peak_annotation:
+                    intensity_values_.append(str(peak.intensity))
+                    mz_values_.append(str(peak.mz))
+                    annotations_.append(str(peak.annotation))
+
+                # change list in to string with , seperate
+                intensities = ",".join(intensity_values_)
+                mz_values = ",".join(mz_values_)
+                ions = ",".join(annotations_)
+
+                row = [spectrum_id, psm_index, label, score, scan_nr, sequence, str(len(sequence)), peptide_id.getMZ(), z2, z3, z4, z5, accessions, intensities, mz_values, ions]
                 # scores in meta values
                 for k in meta_value_keys:
                     s = h.getMetaValue(k)

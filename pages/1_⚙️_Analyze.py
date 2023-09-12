@@ -290,8 +290,8 @@ if st.button("Run-analysis"):
         variables = []  
 
         #want to see the command values and argues
-        message = f"Running '{' '.join(args)}'"
-        st.code(message)
+        #message = f"Running '{' '.join(args)}'"
+        #st.code(message)
 
         #run subprocess command
         run_subprocess(args, variables, result_dict)
