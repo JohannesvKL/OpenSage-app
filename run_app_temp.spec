@@ -17,7 +17,8 @@ a = Analysis(
         ("./myenv/Lib/site-packages/captcha", "./captcha/"),
         ("./myenv/Lib/site-packages/pyarrow", "./pyarrow/"), 
         ("./myenv/lib/site-packages/xlsxwriter", "./xlsxwriter/"),
-        ("./myenv/lib/site-packages/st_aggrid", "./st_aggrid/")
+        ("./myenv/lib/site-packages/st_aggrid", "./st_aggrid/"),
+        ("./myenv/lib/site-packages/decouple.py", ".")
     ],
     hiddenimports=[],
     hookspath=['./hooks'],
