@@ -49,45 +49,55 @@ with tabs[0]:
             if CSM_ is None: 
                 st.warning("No CSMs found in selected idXML file")
             else:
-                # provide dataframe
-                gb = GridOptionsBuilder.from_dataframe(CSM_[list(CSM_.columns.values)])
-
-                # configure selection
-                gb.configure_selection(selection_mode="single", use_checkbox=True)
-                gb.configure_side_bar()
-                gb.configure_pagination(enabled=True, paginationAutoPageSize=False, paginationPageSize=10)
-                gridOptions = gb.build()
                 
-                data = AgGrid(CSM_,
-                            gridOptions=gridOptions,
-                            enable_enterprise_modules=True,
-                            allow_unsafe_jscode=True,
-                            update_mode=GridUpdateMode.SELECTION_CHANGED,
-                            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS)
+                if CSM_['NuXL:NA'].str.contains('none').any():
+                    st.warning("nonXL CSMs found")  
+                else:
+                   
+                    # provide dataframe
+                    gb = GridOptionsBuilder.from_dataframe(CSM_[list(CSM_.columns.values)])
 
-                #download table
-                download_table(CSM_, f"{os.path.splitext(selected_file)[0]}")
-                #select row by user
-                selected_row = data["selected_rows"]
+                    # configure selection
+                    gb.configure_selection(selection_mode="single", use_checkbox=True)
+                    gb.configure_side_bar()
+                    gb.configure_pagination(enabled=True, paginationAutoPageSize=False, paginationPageSize=10)
+                    gridOptions = gb.build()
+                    
+                    data = AgGrid(CSM_,
+                                gridOptions=gridOptions,
+                                enable_enterprise_modules=True,
+                                allow_unsafe_jscode=True,
+                                update_mode=GridUpdateMode.SELECTION_CHANGED,
+                                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS)
 
-                if selected_row:
+                    #download table
+                    download_table(CSM_, f"{os.path.splitext(selected_file)[0]}")
+                    #select row by user
+                    selected_row = data["selected_rows"]
 
-                    # Create a dictionary of annotation features
-                    annotation_data = {'intarray': [float(value) for value in {selected_row[0]['intensities']}.pop().split(',')],
-                            'mzarray': [float(value) for value in {selected_row[0]['mz_values']}.pop().split(',')],
-                            'anotarray': [str(value) for value in {selected_row[0]['ions']}.pop().split(',')]
-                        }
+                    if selected_row:
 
-                    # Create the DataFrame
-                    annotation_df = pd.DataFrame(annotation_data)
-                    # title of spectra
-                    spectra_name = os.path.splitext(selected_file)[0] +" Scan# " + str({selected_row[0]['ScanNr']}).strip('{}') + " Pep: " + str({selected_row[0]['Peptide']}).strip('{}\'') +  " + " +str ({selected_row[0]['NuXL:NA']}).strip('{}\'')
-                    # generate ms2 spectra
-                    fig = plot_ms2_spectrum(annotation_df, spectra_name, "black")
-                    #show figure
-                    show_fig(fig,  f"{os.path.splitext(selected_file)[0]}_scan_{str({selected_row[0]['ScanNr']}).strip('{}')}")
-                
-                            
+                        # Create a dictionary of annotation features
+                        annotation_data = {'intarray': [float(value) for value in {selected_row[0]['intensities']}.pop().split(',')],
+                                'mzarray': [float(value) for value in {selected_row[0]['mz_values']}.pop().split(',')],
+                                'anotarray': [str(value) for value in {selected_row[0]['ions']}.pop().split(',')]
+                            }
+                        
+                        # Check if the lists are not empty
+                        if annotation_data['intarray'] and annotation_data['mzarray'] and annotation_data['anotarray']:
+                            # Create the DataFrame
+                            annotation_df = pd.DataFrame(annotation_data)
+                            # title of spectra
+                            spectra_name = os.path.splitext(selected_file)[0] +" Scan# " + str({selected_row[0]['ScanNr']}).strip('{}') + " Pep: " + str({selected_row[0]['Peptide']}).strip('{}\'') +  " + " +str ({selected_row[0]['NuXL:NA']}).strip('{}\'')
+                            # generate ms2 spectra
+                            fig = plot_ms2_spectrum(annotation_df, spectra_name, "black")
+                            #show figure
+                            show_fig(fig,  f"{os.path.splitext(selected_file)[0]}_scan_{str({selected_row[0]['ScanNr']}).strip('{}')}")
+
+                        else:
+                            # if any list empty
+                            st.warning("Annotation not available for this peptide")
+                                
         #with PRTs Table
         with tabs_[1]:
             # Extracting components from the input filename to show the result of corresponding proteins file
@@ -298,10 +308,13 @@ with tabs[2]:
     #form to upload file
     with st.form("Upload .idXML and .tsv", clear_on_submit=True):
         files = st.file_uploader(
-            "NuXL result files", accept_multiple_files=(st.session_state.location == "local"), type=['.idXML', '.tsv'], help="Input file (Valid formats: 'idXML', 'tsv') ")
+            "NuXL result files", accept_multiple_files=(st.session_state.location == "local"), type=['.idXML', '.tsv'], help="Input file (Valid formats: 'idXML', 'tsv') should be _XLs output file")
         cols = st.columns(3)
         if cols[1].form_submit_button("Add files to workspace", type="primary"):
-            save_uploaded_result(files)
+            if not files:
+                st.warning("Upload some files first.")
+            else:
+                save_uploaded_result(files)
             st.experimental_rerun()
 
 # At the end of each page, always save parameters (including any changes via widgets with key)
