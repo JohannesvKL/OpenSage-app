@@ -8,8 +8,22 @@ from src.fileupload import *
 from src.result_files import *
 from src.ini2dec import *
 import threading
+from src.captcha_ import *
 
 params = page_setup()
+
+#if local no need captcha
+if st.session_state.location == "local":
+    params["controllo"] = True
+    st.session_state["controllo"] = True
+
+#if controllo is false means not captcha applied
+if 'controllo' not in st.session_state or params["controllo"] == False:
+    #apply captcha
+    captcha_control()
+        
+
+### main content of page
 
 #title of page
 st.title("⚙️ Run Analysis")
@@ -20,7 +34,7 @@ if "selected-mzML-files" not in st.session_state:
 
 #make sure "selected-fasta-files" is in session state
 if "selected-fasta-files" not in st.session_state:
-     st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
+    st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
 
 #make sure mzML example files in current session state
 load_example_mzML_files()
@@ -46,7 +60,7 @@ fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").it
 selected_fasta_file = st.selectbox(
     "choose fasta file",
     [f.name for f in Path(st.session_state.workspace,
-                          "fasta-files").iterdir()],
+                        "fasta-files").iterdir()],
     help="If file not here, please upload at File Upload"
 )
 
@@ -91,11 +105,11 @@ config_path = os.path.join(current_dir, 'assets', 'OpenMS_NuXL.ini')
 #take NuXL config dictionary 
 # (will give every section as 1 entry: 
 # entry = {
-           #"name": node_name,
-           #"default": node_default,
-           #"description": node_desc,
-           #"restrictions": restrictions_list
-           # })
+        #"name": node_name,
+        #"default": node_default,
+        #"description": node_desc,
+        #"restrictions": restrictions_list
+        # })
 NuXL_config=ini2dict(config_path, sections)
 
 #take all variables settings from config dictionary/ take all user configuration
@@ -184,7 +198,7 @@ def run_subprocess(args, variables, result_dict):
         args: command with args
         variables: variable if any
         result_dict: contain success (success flag) and log (capture long log)
-                     should contain result_dict["success"], result_dict["log"]
+                    should contain result_dict["success"], result_dict["log"]
 
     Returns:
         None

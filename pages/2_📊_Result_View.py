@@ -4,9 +4,21 @@ from src.result_files import *
 import plotly.graph_objects as go
 from src.view import plot_ms2_spectrum
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, ColumnsAutoSizeMode
-
+from src.captcha_ import *
 
 params = page_setup()
+
+#if local no need captcha
+if st.session_state.location == "local":
+    params["controllo"] = True
+    st.session_state["controllo"] = True
+
+#if controllo is false means not captcha applied
+if 'controllo' not in st.session_state or params["controllo"] == False:
+    #apply captcha
+    captcha_control()
+        
+### main content of page
 
 # Make sure "selected-result-files" is in session state
 if "selected-result-files" not in st.session_state:
@@ -53,7 +65,7 @@ with tabs[0]:
                 if CSM_['NuXL:NA'].str.contains('none').any():
                     st.warning("nonXL CSMs found")  
                 else:
-                   
+                
                     # provide dataframe
                     gb = GridOptionsBuilder.from_dataframe(CSM_[list(CSM_.columns.values)])
 

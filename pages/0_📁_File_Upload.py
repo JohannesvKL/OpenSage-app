@@ -3,8 +3,22 @@ import streamlit as st
 import pandas as pd
 from src.common import *
 from src.fileupload import *
+from src.captcha_ import *
 
 params = page_setup()
+
+#if local no need captcha
+if st.session_state.location == "local":
+    params["controllo"] = True
+    st.session_state["controllo"] = True
+
+#if controllo is false means not captcha applied
+if 'controllo' not in st.session_state or params["controllo"] == False:
+    #apply captcha
+    captcha_control()
+        
+
+### main content of page
 
 # Make sure "selected-mzML-files" is in session state
 if "selected-mzML-files" not in st.session_state:
