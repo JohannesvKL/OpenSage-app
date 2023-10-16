@@ -3,15 +3,17 @@ import os
 import shutil
 import sys
 import uuid
+import json
 from typing import Any
 from pathlib import Path
+from src.captcha_ import captcha_control
 
 import streamlit as st
 import pandas as pd
 
 # set these variables according to your project
-APP_NAME = "OpenMS NuXL Streamlit App"
-REPOSITORY_NAME = "streamlit-template"
+APP_NAME = "NuXL"
+REPOSITORY_NAME = "NuXL-app"
 
 
 def load_params(default: bool = False) -> dict[str, Any]:
@@ -42,12 +44,6 @@ def load_params(default: bool = False) -> dict[str, Any]:
         with open("assets/default-params.json", "r") as f:
             params = json.load(f)
 
-    # Check if any parameters have been modified during the current session and update the parameter dictionary
-    if not default:
-        for key, value in st.session_state.items():
-            if key in params.keys():
-                params[key] = value
-
     # Return the parameter dictionary
     return params
 
@@ -75,6 +71,7 @@ def save_params(params: dict[str, Any]) -> None:
     for key, value in st.session_state.items():
         if key in params.keys():
             params[key] = value
+
     # Save the parameter dictionary to a JSON file in the workspace directory
     path = Path(st.session_state.workspace, "params.json")
     with open(path, "w") as outfile:
@@ -96,13 +93,13 @@ def page_setup(page: str = "") -> dict[str, Any]:
     # Set Streamlit page configurations
     st.set_page_config(
         page_title=APP_NAME,
-        page_icon="assets/OpenMS.png",
+        page_icon="assets/icon.png",
         layout="wide",
         initial_sidebar_state="auto",
         menu_items=None,
     )
 
-    # Determine the workspace for the current session, should run once at startup
+    # Determine the workspace for the current session
     if "workspace" not in st.session_state:
         # Clear any previous caches
         st.cache_data.clear()
@@ -110,30 +107,24 @@ def page_setup(page: str = "") -> dict[str, Any]:
         # Check location
         if "local" in sys.argv:
             st.session_state.location = "local"
+            st.session_state.controlo = True
         else:
             st.session_state.location = "online"
-
+            st.session_state.controlo = False
+        # if we run the packaged windows version, we start within the Python directory -> need to change working directory to ..\umetaflow-gui-main
+        if "windows" in sys.argv:
+            os.chdir("../NuXL-app-main")
         # Define the directory where all workspaces will be stored
+        workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
         if st.session_state.location == "online":
-            workspaces_dir = Path("workspaces-"+REPOSITORY_NAME)
-            # Outside of the repository directory for local and docker
-            # If running in a Docker container, set working directory to the repository directory
-            if "docker" in sys.argv:
-                workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
-                os.chdir(REPOSITORY_NAME)
+            st.session_state.workspace = Path(workspaces_dir, str(uuid.uuid1()))
         else:
-            workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
-
-        # If running locally, use the default workspace
-        if "local" in sys.argv:
             st.session_state.workspace = Path(workspaces_dir, "default")
-            # not any captcha so, controllo should be true
-            st.session_state['controllo'] = True
 
-        # If running online, create a new workspace with a random UUID
-        else:
-            st.session_state.workspace = Path(
-                workspaces_dir, str(uuid.uuid1()))
+    # If run in hosted mode, show captcha as long as it has not been solved
+    if not st.session_state["controlo"]:
+        # Apply captcha by calling the captcha_control function
+        captcha_control()
 
     # Make sure the necessary directories exist
     st.session_state.workspace.mkdir(parents=True, exist_ok=True)
@@ -146,17 +137,11 @@ def page_setup(page: str = "") -> dict[str, Any]:
     Path(st.session_state.workspace,
          "result-files").mkdir(parents=True, exist_ok=True)
 
-    # Load parameters from the parameter file
-    params = load_params()
-
     # Render the sidebar
-    params = render_sidebar(params, page)
-
-    # Return the loaded parameters
+    params = render_sidebar(page)
     return params
 
-
-def render_sidebar(params: dict[str, Any], page: str = "") -> None:
+def render_sidebar(page: str = "") -> None:
     """
     Renders the sidebar on the Streamlit app, which includes the workspace switcher,
     the mzML file selector, the logo, and settings.
@@ -173,13 +158,13 @@ def render_sidebar(params: dict[str, Any], page: str = "") -> None:
     Returns:
         None
     """
+    params = load_params()
     with st.sidebar:
         # The main page has workspace switcher
         if page == "main":
             st.markdown("🖥️ **Workspaces**")
             # Define workspaces directory outside of repository
-            workspaces_dir = Path("workspaces-"+REPOSITORY_NAME)
-            #st.write("workspace dir", workspaces_dir)
+            workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
             # Online: show current workspace name in info text and option to change to other existing workspace
             if st.session_state.location == "online":
                 # Change workspace...
@@ -187,7 +172,6 @@ def render_sidebar(params: dict[str, Any], page: str = "") -> None:
                 if st.button("**Enter Workspace**") and new_workspace:
                     path = Path(
                         workspaces_dir, new_workspace)
-                    #st.write("path to enter: ", path)
                     if path.exists():
                         st.session_state.workspace = path
                     else:
@@ -205,8 +189,10 @@ You can share this unique workspace ID with other people.
             # Local: user can create/remove workspaces as well and see all available
             elif st.session_state.location == "local":
                 # Define callback function to change workspace
-                workspaces_dir = Path("..","workspaces-"+REPOSITORY_NAME)
                 def change_workspace():
+                    for key in params.keys():
+                        if key in st.session_state.keys():
+                            del st.session_state[key]
                     st.session_state.workspace = Path(
                         workspaces_dir, st.session_state["chosen-workspace"]
                     )
@@ -230,7 +216,7 @@ You can share this unique workspace ID with other people.
                 if st.button("**Create Workspace**"):
                     path.mkdir(parents=True, exist_ok=True)
                     st.session_state.workspace = path
-                    st.experimental_rerun()
+                    st.rerun()
                 # Remove existing workspace and fall back to default
                 if st.button("⚠️ Delete Workspace"):
                     if path.exists():
@@ -238,18 +224,9 @@ You can share this unique workspace ID with other people.
                         st.session_state.workspace = Path(
                             workspaces_dir, "default"
                         )
-                        st.experimental_rerun()
+                        st.rerun()
 
-        # Workflow pages have mzML file selector, there can be multiple workflow pages which share mzML file selection
-        if page == "workflow":
-            st.markdown("📁 **mzML files**")
-            st.multiselect("mzML files",  options=[Path(f).stem for f in Path(st.session_state.workspace, "mzML-files").glob("*.mzML")],
-                           default=params["selected-mzML-files"], key="selected-mzML-files", label_visibility="collapsed")
-            st.markdown("---")
-
-        # All pages have logo and settings
-        st.image("assets/OpenMS.png", "powered by")
-        st.markdown("---")
+        # All pages have settings, workflow indicator and logo
         with st.expander("⚙️ **Settings**"):
             img_formats = ["svg", "png", "jpeg", "webp"]
             st.selectbox(
@@ -268,13 +245,11 @@ You can share this unique workspace ID with other people.
             if st.button("⚠️ Load default parameters"):
                 params = load_params(default=True)
 
-        # Indicator for current workspace
         if page != "main":
             st.info(
                 f"**{Path(st.session_state['workspace']).stem}**")
-
-        return params
-
+        st.image("assets/OpenMS.png", "powered by")
+    return params
 
 def v_space(n: int, col=None) -> None:
     """
@@ -304,7 +279,7 @@ def show_table(df: pd.DataFrame, download_name: str = "") -> None:
         download_name (str): The name to give to the downloaded file. Defaults to empty string.
 
     Returns:
-        None
+        df (pd.DataFrame): The possibly edited dataframe.
     """
     # Show dataframe using container width
     st.dataframe(df, use_container_width=True)
@@ -333,6 +308,8 @@ def show_table(df: pd.DataFrame, download_name: str = "") -> None:
                 output,
                 download_name.replace(" ", "-") + ".xlsx", help="download table in xlsx format"
             )
+            
+    return df
 
 def download_table(df: pd.DataFrame, download_name: str = "") -> None:
     """
@@ -370,7 +347,6 @@ def download_table(df: pd.DataFrame, download_name: str = "") -> None:
                 output,
                 download_name.replace(" ", "-") + ".xlsx", help="download table in xlsx format"
             )
-            
 
 def show_fig(fig, download_name: str, container_width: bool = True) -> None:
     """
@@ -418,9 +394,11 @@ def reset_directory(path: Path) -> None:
     Returns:
         None
     """
-    shutil.rmtree(path)
+    path = Path(path)
+    if path.exists():
+        shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
-    
+
 
 # General warning/error messages
 WARNINGS = {
@@ -432,4 +410,3 @@ ERRORS = {
     "workflow": "Something went wrong during workflow execution.",
     "visualization": "Something went wrong during visualization of results.",
 }
-
