@@ -19,7 +19,7 @@ def ini2dict(path: str, sections: list):
     # Initialize an empty dictionary to store the extracted information
     config_dict = {}
     
-    ## dictionaries used to capture these variable from sections
+    # dictionaries used to capture these variable from sections
     precursor_mass_tolerance = {}
     fragment_mass_tolerance = {}
     precursor_mass_tolerance_unit = {}
@@ -44,7 +44,7 @@ def ini2dict(path: str, sections: list):
                 "restrictions": restrictions_list
             }
 
-            ## because the mass tolerance same section in ini file, so need to validate from descriptions
+            # because the mass tolerance same section in ini file, so need to validate from descriptions
             
             if "Precursor mass tolerance" in node_desc:  
                 entry["name"] = "precursor_mass_tolerance"
@@ -65,12 +65,12 @@ def ini2dict(path: str, sections: list):
         # Store the entry in the section dictionary
         config_dict[section_name] = entry
 
-        ## add mass tolerance dictionaries to config
+        # add mass tolerance dictionaries to config
         if "mass_tolerance" in section_name:
             config_dict["precursor_mass_tolerance"] = precursor_mass_tolerance
             config_dict["fragment_mass_tolerance"] = fragment_mass_tolerance
             
-        ## add mass tolerance unit dictionaries to config
+        # add mass tolerance unit dictionaries to config
         if "mass_tolerance_unit" in section_name:
             config_dict["precursor_mass_tolerance_unit"] = precursor_mass_tolerance_unit
             config_dict["fragment_mass_tolerance_unit"] = fragment_mass_tolerance_unit
