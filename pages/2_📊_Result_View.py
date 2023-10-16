@@ -8,14 +8,9 @@ from src.captcha_ import *
 
 params = page_setup()
 
-#if local no need captcha
-if st.session_state.location == "local":
-    params["controllo"] = True
-    st.session_state["controllo"] = True
-
-#if controllo is false means not captcha applied
+# If run in hosted mode, show captcha as long as it has not been solved
 if 'controllo' not in st.session_state or params["controllo"] == False:
-    #apply captcha
+    # Apply captcha by calling the captcha_control function
     captcha_control()
         
 ### main content of page

@@ -9,19 +9,14 @@ from src.result_files import *
 from src.ini2dec import *
 import threading
 from src.captcha_ import *
+from src.run_subprocess import *
 
 params = page_setup()
 
-#if local no need captcha
-if st.session_state.location == "local":
-    params["controllo"] = True
-    st.session_state["controllo"] = True
-
-#if controllo is false means not captcha applied
+# If run in hosted mode, show captcha as long as it has not been solved
 if 'controllo' not in st.session_state or params["controllo"] == False:
-    #apply captcha
-    captcha_control()
-        
+    # Apply captcha by calling the captcha_control function
+    captcha_control()        
 
 ### main content of page
 
@@ -189,57 +184,6 @@ with cols[1]:
 result_dict = {}
 result_dict["success"] = False
 result_dict["log"] = " "
-
-def run_subprocess(args, variables, result_dict):
-    """
-    run subprocess e-g: NuXL command
-
-    Args:
-        args: command with args
-        variables: variable if any
-        result_dict: contain success (success flag) and log (capture long log)
-                    should contain result_dict["success"], result_dict["log"]
-
-    Returns:
-        None
-    """
-    #st.write("inside run_subprocess")
-    #process = subprocess.Popen(args + list(variables), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, text=True)
-    # run subprocess and get every line of executable log in same time
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
-    stdout_ = []
-    stderr_ = []
-
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            #print every line of exec on page
-            st.text(output.strip())
-            #append line to store log
-            stdout_.append(output.strip())
-
-    while True:
-        error = process.stderr.readline()
-        if error == '' and process.poll() is not None:
-            break
-        if error:
-            #print every line of exec on page even error
-            st.error(error.strip())
-            #append line to store log of error
-            stderr_.append(error.strip())
-
-    #check if process run successfully
-    if process.returncode == 0:
-        result_dict["success"] = True
-        #save in to log all lines
-        result_dict["log"] = " ".join(stdout_)
-    else:
-        result_dict["success"] = False
-        #save in to log all lines even process cause error
-        result_dict["log"] = " ".join(stderr_)
 
 #create terminate flag from even function
 terminate_flag = threading.Event()

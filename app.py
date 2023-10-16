@@ -25,20 +25,20 @@ def main():
 if "local" in sys.argv:
     main()
 
+    # If not in local mode, assume it's hosted/online mode
 else:
-
-    # WORK LIKE MULTIPAGE APP     
+    # If captcha control is not in session state or set to False
     if 'controllo' not in st.session_state or st.session_state['controllo'] == False:
-        #delete pages
-        delete_page("app", "File_Upload")
-        delete_page("app", "Analyze")
-        delete_page("app", "Result_View")
-        #apply captcha
+        # hide app pages as long as captcha not solved
+        #delete_all_pages("app")
+
+        # Apply captcha control to verify the user
         captcha_control()
-    else:
-        #run main
+
+    else:     
+        # Run the main function
         main()
-        #add all pages back
-        add_page("app", "File_Upload")
-        add_page("app", "Analyze")
-        add_page("app", "Result_View")
+
+        # Restore all pages (assuming "app" is the main page)
+        #restore_all_pages("app")
+        
