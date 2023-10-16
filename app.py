@@ -23,6 +23,8 @@ def main():
     save_params(params) 
 
 if "local" in sys.argv:
+    params["controllo"] = True
+    st.session_state["controllo"] = True
     main()
 
     # If not in local mode, assume it's hosted/online mode

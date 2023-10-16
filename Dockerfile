@@ -1,60 +1,30 @@
 # This Dockerfile builds OpenMS, the TOPP tools, pyOpenMS and thidparty tools.
 # It also adds a basic streamlit server that serves a pyOpenMS-based app.
 # hints:
-# build image and give it a name (here: streamlitapp) with: docker build --no-cache -t streamlitnuxlapp:latest . 2>&1 | tee build.log 
+# build image and give it a name (here: streamlitapp) with: docker build --no-cache -t streamlitapp:latest --build-arg GITHUB_TOKEN=<your-github-token> . 2>&1 | tee build.log 
 # check if image was build: docker image ls
-# run container: docker run -p 8501:8501 streamlitnuxlapp:latest
-####### docker-compose up --build
-####### http://localhost:8501 (to access the app locally)
-####### docker-compose exec streamlit /bin/bash (to run tools inside container)
+# run container: docker run -p 8501:8501 streamlitappsimple:latest
 # debug container after build (comment out ENTRYPOINT) and run container with interactive /bin/bash shell
 # prune unused images/etc. to free disc space (e.g. might be needed on gitpod). Use with care.: docker system prune --all --force
 
-FROM ubuntu:22.04 AS stage1
+FROM ubuntu:22.04 AS setup-build-system
 ARG OPENMS_REPO=https://github.com/OpenMS/OpenMS.git
 ARG OPENMS_BRANCH=feature/NuXL
 ARG PORT=8501
+# GitHub token to download latest OpenMS executable for Windows from Github action artifact.
+ARG GITHUB_TOKEN
+# Streamlit app Gihub user name (to download artifact from).
+ARG GITHUB_USER=Arslan-Siraj
+# Streamlit app Gihub repository name (to download artifact from).
+ARG GITHUB_REPO=NuXL-app
 
-# Step 1: set up a sane build system
 USER root
 
+# Install required Ubuntu packages.
 RUN apt-get -y update
-RUN apt-get install -y --no-install-recommends --no-install-suggests g++ autoconf automake patch libtool make git gpg wget ca-certificates curl libgtk2.0-dev
+RUN apt-get install -y --no-install-recommends --no-install-suggests g++ autoconf automake patch libtool make git gpg wget ca-certificates curl jq libgtk2.0-dev openjdk-8-jdk cron
 RUN update-ca-certificates
-
-# Install mamba (faster than conda)
-ENV PATH="/root/mambaforge/bin:${PATH}"
-RUN wget -q \
-    https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh \
-    && bash Mambaforge-Linux-x86_64.sh -b \
-    && rm -f Mambaforge-Linux-x86_64.sh
-RUN mamba --version
-
-# Step 2: get an up-to date cmake (HEREDOC needs DOCKER_BUILDKIT=1 enabled or build with "docker buildx")
-RUN apt-get -y update && \
-    apt-get install -y lsb-release wget && \
-    export CMAKE_UBUNTU_VERSION=$(grep -oP 'UBUNTU_CODENAME=\K\w+' /etc/os-release) && \
-    if ! wget -q --method=HEAD "https://apt.kitware.com/ubuntu/dists/$CMAKE_UBUNTU_VERSION/Release"; then \
-      bash -c "$(wget -O - https://apt.kitware.com/kitware-archive.sh)"; \
-    else \
-      wget -qO - https://apt.kitware.com/kitware-archive.sh | bash -s -- --release $CMAKE_UBUNTU_VERSION; \
-    fi && \
-    apt-get -y update && \
-    apt-get install -y cmake
- 
-# RUN <<-EOF
-#    cmake_ubuntu_version=$(lsb_release -cs)
-#    if ! wget -q --method=HEAD "https://apt.kitware.com/ubuntu/dists/$cmake_ubuntu_version/Release"; then
-#      bash -c "$(wget -O - https://apt.kitware.com/kitware-archive.sh)"
-#    else
-#      wget -qO - https://apt.kitware.com/kitware-archive.sh | bash -s -- --release $cmake_ubuntu_version
-#    fi
-#    apt-get -y update
-#    apt-get install -y cmake
-#EOF  
-    
-# Step 3: dependencies for contrib etc.
-RUN apt-get install -y --no-install-recommends --no-install-suggests libsvm-dev libglpk-dev libzip-dev zlib1g-dev libxerces-c-dev libbz2-dev libomp-dev libhdf5-dev
+RUN apt-get install -y --no-install-recommends --no-install-suggests libsvm-dev libeigen3-dev coinor-libcbc-dev libglpk-dev libzip-dev zlib1g-dev libxerces-c-dev libbz2-dev libomp-dev libhdf5-dev
 RUN apt-get install -y --no-install-recommends --no-install-suggests libboost-date-time1.74-dev \
                                                                      libboost-iostreams1.74-dev \
                                                                      libboost-regex1.74-dev \
@@ -62,25 +32,29 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests libboost-da
                                                                      libboost-random1.74-dev
 RUN apt-get install -y --no-install-recommends --no-install-suggests qtbase5-dev libqt5svg5-dev libqt5opengl5-dev
 
-################################### clone OpenMS branch and the associcated contrib+thirdparties+pyOpenMS-doc submodules
+# Download and install mamba.
+ENV PATH="/root/mambaforge/bin:${PATH}"
+RUN wget -q \
+    https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh \
+    && bash Mambaforge-Linux-x86_64.sh -b \
+    && rm -f Mambaforge-Linux-x86_64.sh
+RUN mamba --version
+
+# Setup mamba environment.
+COPY environment.yml ./environment.yml
+RUN mamba env create -f environment.yml
+RUN echo "mamba activate streamlit-env" >> ~/.bashrc
+SHELL ["/bin/bash", "--rcfile", "~/.bashrc"]
+SHELL ["mamba", "run", "-n", "streamlit-env", "/bin/bash", "-c"]
+
+# Install up-to-date cmake via mamba and packages for pyOpenMS build.
+RUN mamba install cmake
+RUN pip install --upgrade pip && python -m pip install -U setuptools nose Cython autowrap pandas numpy pytest
+
+# Clone OpenMS branch and the associcated contrib+thirdparties+pyOpenMS-doc submodules.
 RUN git clone --recursive --depth=1 -b ${OPENMS_BRANCH} --single-branch ${OPENMS_REPO} && cd /OpenMS
-WORKDIR /OpenMS
 
-###################################
-# Step 4: Compile missing dependencies
-RUN mkdir /OpenMS/contrib-build
-WORKDIR /OpenMS/contrib-build
-
-RUN cmake -DBUILD_TYPE=EIGEN /OpenMS/contrib && rm -rf archives src
-RUN cmake -DBUILD_TYPE=COINOR /OpenMS/contrib && rm -rf archives src
-
-#################################### compile OpenMS library
-WORKDIR /
-
-# pull Linux compatible third-party dependencies and store them 
-# in directory thirdparty. Add path to them.
-RUN apt-get install -y --no-install-recommends --no-install-suggests openjdk-8-jdk
-
+# Pull Linux compatible third-party dependencies and store them in directory thirdparty.
 WORKDIR /OpenMS
 RUN mkdir /thirdparty && \
     git submodule update --init THIRDPARTY && \
@@ -89,63 +63,75 @@ RUN mkdir /thirdparty && \
     chmod -R +x /thirdparty
 ENV PATH="/thirdparty/LuciPHOr2:/thirdparty/MSGFPlus:/thirdparty/Sirius:/thirdparty/ThermoRawFileParser:/thirdparty/Comet:/thirdparty/Fido:/thirdparty/MaRaCluster:/thirdparty/MyriMatch:/thirdparty/OMSSA:/thirdparty/Percolator:/thirdparty/SpectraST:/thirdparty/XTandem:/thirdparty/crux:${PATH}"
 
+# Build OpenMS and pyOpenMS.
+FROM setup-build-system AS compile-openms
+WORKDIR /
+
+# Set up build directory.
 RUN mkdir /openms-build
 WORKDIR /openms-build
 
-# configure
-RUN /bin/bash -c "cmake -DCMAKE_BUILD_TYPE='Release' -DCMAKE_PREFIX_PATH='/OpenMS/contrib-build/;/usr/;/usr/local' -DBOOST_USE_STATIC=OFF ../OpenMS"
+# Configure.
+RUN /bin/bash -c "cmake -DCMAKE_BUILD_TYPE='Release' -DCMAKE_PREFIX_PATH='/OpenMS/contrib-build/;/usr/;/usr/local' -DHAS_XSERVER=OFF -DBOOST_USE_STATIC=OFF -DPYOPENMS=ON ../OpenMS -DPY_MEMLEAK_DISABLE=On"
 
-# make OpenMS library and executables
-RUN make -j4 TOPP && make -j4 UTILS && rm -rf src doc CMakeFiles 
+# Build TOPP tools and clean up.
+RUN make -j4 TOPP
+RUN rm -rf src doc CMakeFiles
 
-ENV PATH="/openms-build/bin/:${PATH}"
+# Build pyOpenMS wheels and install via pip.
+RUN make -j4 pyopenms
+WORKDIR /openms-build/pyOpenMS
+RUN pip install dist/*.whl
 
-#################################### build pyOpenMS
-FROM stage1 AS stage2
-SHELL ["/bin/bash", "-c"]
-WORKDIR /openms-build
 
-# Activate and configure the Conda environment to build pyOpenMS (needs extra libs)
-RUN conda update -n base -c conda-forge conda && conda info && conda create -n py310 python=3.10
-# note: activation of conda needs to go to bashrc because every RUN command spawns new bash
-SHELL ["conda", "run", "-n", "py310", "/bin/bash", "-c"]
-RUN echo "source activate py310" > ~/.bashrc
-RUN conda install pip
-RUN python -m pip install --upgrade pip && python -m pip install -U setuptools nose Cython autowrap pandas numpy pytest
+WORKDIR /
+RUN mkdir openms
 
-RUN cmake -DCMAKE_PREFIX_PATH='/contrib-build/;/usr/;/usr/local' -DOPENMS_CONTRIB_LIBS='/contrib-build/' -DHAS_XSERVER=Off -DBOOST_USE_STATIC=OFF -DPYOPENMS=On ../OpenMS -DPY_MEMLEAK_DISABLE=On
+# Copy TOPP tools bin directory, add to PATH.
+RUN cp -r openms-build/bin /openms/bin
+ENV PATH="/openms/bin/:${PATH}"
 
-# make and install pyOpenMS
-#RUN make -j4 pyopenms
-#WORKDIR /openms-build/pyOpenMS
-#RUN pip install dist/*.whl
-#ENV PATH="/openms-build/bin/:${PATH}"
+# Copy TOPP tools bin directory, add to PATH.
+RUN cp -r openms-build/lib /openms/lib
+ENV LD_LIBRARY_PATH="/openms/lib/:${LD_LIBRARY_PATH}"
 
-### TODO: cleanup OpenMS source folder. Probably needs a make install to have share available
-#RUN rm -rf /OpenMS
+# Copy share folder, add to PATH, remove source directory.
+RUN cp -r OpenMS/share/OpenMS /openms/share
+RUN rm -rf OpenMS
+ENV OPENMS_DATA_PATH="/openms/share/"
 
-#################################### install streamlit
-FROM stage2 AS stage3
-# creates the streamlit-env conda environment
-# install packages
-COPY environment.yml ./environment.yml
-RUN mamba env create -f environment.yml
-RUN echo "conda activate streamlit-env" >> ~/.bashrc
-SHELL ["/bin/bash", "--rcfile", "~/.bashrc"]
+# Remove build directory.
+RUN rm -rf openms-build
 
-# create workdir and copy over all streamlit related files/folders
-WORKDIR /app
+# Prepare and run streamlit app.
+FROM compile-openms AS run-app
+# Create workdir and copy over all streamlit related files/folders.
+
 # note: specifying folder with slash as suffix and repeating the folder name seems important to preserve directory structure
+WORKDIR /app
 COPY app.py /app/app.py 
 COPY src/ /app/src
 COPY assets/ /app/assets
 COPY example-data/ /app/example-data
 COPY pages/ /app/pages
+COPY clean-up-workspaces.py /app/clean-up-workspaces.py
 
-# install cron (TODO: think about automatic clean up of temporary files and workspaces)
-# RUN apt-get install -y cron
+# add cron job to the crontab
+RUN echo "0 3 * * * /root/mambaforge/envs/streamlit-env/bin/python /app/clean-up-workspaces.py >> /app/clean-up-workspaces.log 2>&1" | crontab -
 
-# make sure that conda environment is used
-SHELL ["conda", "run", "-n", "streamlit-env", "/bin/bash", "-c"]
+# create entrypoint script to start cron service and launch streamlit app
+RUN echo "#!/bin/bash" > /app/entrypoint.sh
+RUN echo "service cron start" >> /app/entrypoint.sh
+RUN echo "mamba run --no-capture-output -n streamlit-env streamlit run app.py" >> /app/entrypoint.sh
+# make the script executable
+RUN chmod +x /app/entrypoint.sh
+
+# Download latest OpenMS App executable for Windows from Github actions workflow.
+RUN WORKFLOW_ID=$(curl -s "https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/workflows" | jq -r '.workflows[] | select(.name == "Build executable for Windows") | .id') \
+    && SUCCESSFUL_RUNS=$(curl -s "https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/runs?workflow_id=$WORKFLOW_ID&status=success" | jq -r '.workflow_runs[0].id') \
+    && ARTIFACT_ID=$(curl -s "https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/runs/$SUCCESSFUL_RUNS/artifacts" | jq -r '.artifacts[] | select(.name == "OpenMS-App") | .id') \
+    && curl -LJO -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/artifacts/$ARTIFACT_ID/zip" -o /app/OpenMS-App
+
+# Run app as container entrypoint.
 EXPOSE $PORT
-ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "streamlit-env", "streamlit", "run", "app.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]
