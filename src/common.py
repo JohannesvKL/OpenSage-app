@@ -10,7 +10,7 @@ import streamlit as st
 import pandas as pd
 
 # set these variables according to your project
-APP_NAME = "OpenMS App Template"
+APP_NAME = "OpenMS NuXL Streamlit App"
 REPOSITORY_NAME = "streamlit-template"
 
 

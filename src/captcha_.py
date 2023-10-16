@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import streamlit as st
 from streamlit.source_util import (
@@ -7,9 +6,11 @@ from streamlit.source_util import (
     get_pages,
     _on_pages_changed
 )
+import os
 
 from captcha.image import ImageCaptcha
 import random, string
+from src.common import *
 
 def delete_all_pages(main_script_path_str: str) -> None:
     """
@@ -172,51 +173,42 @@ width = 400
 height = 180
 
 # define the function for the captcha control
-def captcha_control() -> None:
-    """
-    Captcha control function to verify if the user is not a robot.
-
-    This function displays a captcha image and allows the user to enter the captcha text.
-    It verifies whether the entered captcha text matches the generated captcha.
-
-    Returns:
-        None
-    """
+def captcha_control():
     #control if the captcha is correct
     if 'controllo' not in st.session_state or st.session_state['controllo'] == False:
-        st.title("Makesure you are not a robot🤖")
+        st.title("Make sure you are not a robot🤖")
         
         # define the session state for control if the captcha is correct
         st.session_state['controllo'] = False
-        col1, col2 = st.columns(2)
         
         # define the session state for the captcha text because it doesn't change during refreshes 
         if 'Captcha' not in st.session_state:
                 st.session_state['Captcha'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length_captcha))
         
-        #setup the captcha widget
-        image = ImageCaptcha(width=width, height=height)
-        data = image.generate(st.session_state['Captcha'])
-        col1.image(data)
-        capta2_text = col2.text_area('Enter captcha text', height=20)
-        
-        
-        if st.button("Verify the code"):
-            capta2_text = capta2_text.replace(" ", "")
-            # if the captcha is correct, the controllo session state is set to True
-            if st.session_state['Captcha'].lower() == capta2_text.lower().strip():
-                del st.session_state['Captcha']
-                col1.empty()
-                col2.empty()
-                st.session_state['controllo'] = True
-                st.rerun() 
+        col1, _ = st.columns(2)
+        with col1.form("captcha-form"):
+            #setup the captcha widget
+            st.info("Please enter the captcha as text. Note: If your captcha is not accepted, you might need to disable your ad blocker.")
+            image = ImageCaptcha(width=width, height=height)
+            data = image.generate(st.session_state['Captcha'])
+            st.image(data)
+            c1, c2 = st.columns([70, 30])
+            capta2_text = c1.text_input('Enter captcha text', max_chars=5)
+            c2.markdown("##")
+            if c2.form_submit_button("Verify the code", type="primary"):
+                capta2_text = capta2_text.replace(" ", "")
+                # if the captcha is correct, the controllo session state is set to True
+                if st.session_state['Captcha'].lower() == capta2_text.lower().strip():
+                    del st.session_state['Captcha']
+                    col1.empty()
+                    st.session_state['controllo'] = True
+                    st.rerun() 
+                else:
+                    # if the captcha is wrong, the controllo session state is set to False and the captcha is regenerated
+                    st.error("🚨 Captch is wrong")
+                    del st.session_state['Captcha']
+                    del st.session_state['controllo']
+                    st.rerun()
             else:
-                # if the captcha is wrong, the controllo session state is set to False and the captcha is regenerated
-                st.error("🚨 Captch is wrong")
-                del st.session_state['Captcha']
-                del st.session_state['controllo']
-                st.rerun()
-        else:
-            #wait for the button click
-            st.stop()
-   
+                #wait for the button click
+                st.stop()
