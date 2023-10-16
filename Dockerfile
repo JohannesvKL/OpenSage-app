@@ -1,5 +1,5 @@
-# This Dockerfile builds OpenMS, the TOPP tools, pyOpenMS and thidparty tools.
-# It also adds a basic streamlit server that serves a pyOpenMS-based app.
+# This Dockerfile builds OpenMS on NuXL branch, the TOPP tools, pyOpenMS and thidparty tools.
+
 # hints:
 # build image and give it a name (here: streamlitapp) with: docker build --no-cache -t streamlitapp:latest --build-arg GITHUB_TOKEN=<your-github-token> . 2>&1 | tee build.log 
 # check if image was build: docker image ls
@@ -42,7 +42,7 @@ RUN mamba --version
 
 # Setup mamba environment.
 COPY environment.yml ./environment.yml
-RUN mamba env create -f environment.yml
+RUN mamba env create -f environment.yml 
 RUN echo "mamba activate streamlit-env" >> ~/.bashrc
 SHELL ["/bin/bash", "--rcfile", "~/.bashrc"]
 SHELL ["mamba", "run", "-n", "streamlit-env", "/bin/bash", "-c"]
