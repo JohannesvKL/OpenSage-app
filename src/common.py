@@ -13,7 +13,7 @@ import pandas as pd
 
 # set these variables according to your project
 APP_NAME = "NuXL"
-REPOSITORY_NAME = "NuXL-app"
+REPOSITORY_NAME = "nuxl-app"
 
 
 def load_params(default: bool = False) -> dict[str, Any]:
@@ -113,7 +113,7 @@ def page_setup(page: str = "") -> dict[str, Any]:
             st.session_state.controlo = False
         # if we run the packaged windows version, we start within the Python directory -> need to change working directory to ..\umetaflow-gui-main
         if "windows" in sys.argv:
-            os.chdir("../NuXL-app-main")
+            os.chdir("../nuxl-app-main")
         # Define the directory where all workspaces will be stored
         workspaces_dir = Path("..", "workspaces-"+REPOSITORY_NAME)
         if st.session_state.location == "online":

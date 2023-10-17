@@ -16,7 +16,7 @@ ARG GITHUB_TOKEN
 # Streamlit app Gihub user name (to download artifact from).
 ARG GITHUB_USER=Arslan-Siraj
 # Streamlit app Gihub repository name (to download artifact from).
-ARG GITHUB_REPO=NuXL-app
+ARG GITHUB_REPO=nuxl-app
 
 USER root
 
