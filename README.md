@@ -14,14 +14,16 @@ Welcome to the OpenMS NuXL App, a web application for the NuXL protein-nucleic a
 ### Windows
 1. To get started, download and extract the [OpenMS-app.zip](https://github.com/Arslan-Siraj/nuxl-app/actions) file from latest successfull action.
 2. Run the `run_app.exe`
-3. Use app in your default browser
+3. Use app in your default browser <br/>
+
+The workspaces for the project will be locally generated in the `workspaces-NuXL-app` directory, and the analysis will run using local resources.
    
 ## Quickstart 
 
 You can start right away analyzing your data by following the steps below:
 
 ### 1. Create a workspace
-On the left side of this page you can define a workspace where all your data including uploaded `mzML` files will be stored. Entering a workspace will switch to an existing one or create a new one if it does not exist yet. In the web app, you can share your results via the unique workspace ID. Be careful with sensitive data, anyone with access to this ID can view your data.
+On the left side of this page you can define a workspace where all your data including uploaded files will be stored. Entering a workspace will switch to an existing one or create a new one if it does not exist yet. In the web app, you can share your results via the unique workspace ID. Be careful with sensitive data, anyone with access to this ID can view your data.
 
 ### 2. 📁 Upload your files
 Upload `mzML` and `fasta` files via the **File Upload** tab. The data will be stored in your workspace. With the web app you can upload only one file at a time.
@@ -40,12 +42,15 @@ Here, you can visualize and explore the output of the search engine. All crossli
 After selecting any file, you can view the `CSMs Table`, `PRTs Table`, `PRTs Summary`, `Crosslink efficiency` and `Precursor adducts summary`.
 
 Note: Every table and plot can be downloaded, as indicated in the side-bar under ⚙️ Settings.
-Note: under the **Result Files** tab, you can manage your results. You can `remove` or `download` files from the output files list.
 
 ## How to accessing previously analysed results?
+Under the **Result Files** tab, you can manage your results. You can `remove` or `download` files from the output files list.
 
 ## How to upload result files (e.g., from external sources/collaborator) for manual inspection and visualization?
 At **Upload result files** tab, user can  `upload` the results files and can visualize in **View Results** tab.
+In the web app, collaborators can visualize files by sharing a unique workspace ID.
+
+⚠️ Note: In the web app, all users with a unique workspace ID have the same rights.
 
 ## Contact
 For any inquiries or assistance, please feel free to reach out to us.
