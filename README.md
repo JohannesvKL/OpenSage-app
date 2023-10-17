@@ -27,7 +27,7 @@ Locally there is no limit in files. However, it is recommended to upload large n
 
 Your uploaded files will be shown on the same **File Upload** page in  **mzML files** and **Fasta files** tabs. Also you can remove the files from workspace.
 
-### ⚙️ Workflows
+### ⚙️ Analyze
 select the `mzML` and `fasta` file for analysis and also desire user configuration and run the analysis with **Run-analysis** button. Analysis can be terminate immediately via **Terminate/Clear** button also can look on search engine log on page.
 
 Once the analysis done successfully, the output table will be appear on page and also downloadable link of crosslink identification files.
