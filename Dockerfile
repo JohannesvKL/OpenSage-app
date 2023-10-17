@@ -79,9 +79,9 @@ RUN make -j4 TOPP
 RUN rm -rf src doc CMakeFiles
 
 # Build pyOpenMS wheels and install via pip.
-RUN make -j4 pyopenms
-WORKDIR /openms-build/pyOpenMS
-RUN pip install dist/*.whl
+#RUN make -j4 pyopenms
+#WORKDIR /openms-build/pyOpenMS
+#RUN pip install dist/*.whl
 
 
 WORKDIR /
