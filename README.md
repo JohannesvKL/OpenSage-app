@@ -1,77 +1,51 @@
-# OpenMS streamlit template [![Open Template!](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://openms-template.streamlit.app/)
+# OpenMS NuXL App [![Open Template!](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://openms-template.streamlit.app/)
+**powered by:**
 
-This is a template app for pyOpenMS workflows in a web application.
+<img src="assets/OpenMS.png" width=20%>
 
-## Template specific concepts
+This is a web application of NuXL search engine build in [OpenMS](https://openms.de/).
 
-- **Workspaces:** Directories where all data generated and uploaded can be stored as well as a workspace specific parameter file.
-Running the app locally will put the workspaces outside of the repository directory. Running online (e.g. streamlit cloud) the workspaces will be inside the repository directory.
-- **Run the app local and online (default):** Launching the app with the local argument let's the user create/remove workspaces. The online version is for hosting where the user gets a workspace with a specific ID.
+## NuXL
 
-run locally:
+- **Description:** NuXL, A dedicated software package for the analysis of XL-MS data obtained from UV and chemically crosslinked protein–RNA/DNA samples. It allows for reliable, FDR-controlled assignment of protein–nucleic acid crosslinking sites from samples treated with UV light or chemical crosslinkers and offers user-friendly matched spectra visualization including ion annotations.[more](https://ssp2022.com/index.php/timetable/event/henning-urlaub/#:~:text=NuXL%20is%20available%20in%20the,spectra%20visualization%20including%20ion%20annotations.)
+  
+  
+## Installation
+### Windows
+1. Download and extract the [OpenMS-app.zip](https://github.com/Arslan-Siraj/nuxl-app/actions) file from latest successfull action.
+2. Run the `run_app.exe`
+3. Use app in your default browser
+   
+## Quickstart 
 
-`streamlit run app.py local`
+### Workspaces
+On the left side of this page you can define a workspace where all your data including uploaded `mzML` files will be stored. Entering a workspace will switch to an existing one or create a new one if it does not exist yet. In the web app, you can share your results via the unique workspace ID. Be careful with sensitive data, anyone with access to this ID can view your data.
 
-- **Parameters:** Streamlit offers statefulness via the st.session_state object. However, we want to define default parameters (in `assets/default-params.json`) and store changing parameters for each workspace. Parameters are loaded via the mandatory page_setup function at the start of each page. To track a widget variable via parameters simply give them a key and add a matching entry in the default parameters file. Initialize a widget value from the params dictionary. You can access the value in two was as shown in the workflow example. Re-run the app when changing default parameters.
+### 📁 File Upload
+Upload `mzML` and `fasta` files via the **File Upload** tab. The data will be stored in your workspace. With the web app you can upload only one file at a time.
+Locally there is no limit in files. However, it is recommended to upload large number of files by specifying the path to a directory containing the files.
 
-```python
-params = page_setup()
+Your uploaded files will be shown on the same **File Upload** page in  **mzML files** and **Fasta files** tabs. Also you can remove the files from workspace.
 
-st.number_input(label="x dimension", min_value=1, max_value=20,
-value=params["example-y-dimension"], step=1, key="example-y-dimension")
+### ⚙️ Workflows
+select the `mzML` and `fasta` file for analysis and also desire user configuration and run the analysis with **Run-analysis** button. Analysis can be terminate immediately via **Terminate/Clear** button also can look on search engine log on page.
 
-save_params()
-```
+Once the analysis done successfully, the output table will be appear on page and also downloadable link of crosslink identification files.
+
+#### 📊 Result View
+Here, you can visualize and look at the output of the search engine. All crosslink output files in workspace will appear on **View Results** tab. After selection of any file, user can look at `CSMs Table`, `PRTs Table`, `PRTs Summary`, `Crosslink efficiency` and `Precursor adducts summary`.
+
+**Note:** Every table and plot can be downloadable as given option on side-bar **⚙️ Settings**.
+
+At **Result files** tab, user can  `remove` and `download` file from output files.
+
+At **Upload result files** tab, user can  `upload` the results files and can visualize in **View Results** tab.
+
+## Contact
+
+<br/><br/>
 
 
-## Code structure
 
-- **Pages** must be placed in the `pages` directory.
-- It is recommended to use a separate file for defining functions per page in the `src` directory.
-- The `src/common.py` file contains a set of useful functions for common use (e.g. rendering a table with download button).
 
-## Layout of the template app
 
-The main page contains explanatory text on how to use the app.
-
-The sidebar always contains the OpenMS logo, settings panel and a workspace indicator. The main page contains a workspace selector as well.
-Workflow pages contain a selector for all available mzML files, which have been uploaded.
-
-### Pages:
-
-- **File Upload:** Upload files (online one at a time, local multiple), load example data or copy mzML files from directory (local only). Also show all files in the workspace and options to remove them.
-- **View Raw Data:** An example page to check out mzML files in detail.
-- **Workflow:** Example for a workflow page which has two inputs and a time consuming cached function. The following example code shows a minimal setup for a page and two options how to access widget values for function calls.
-
-```python
-import streamlit as st
-
-from src.common import *
-from src.workflow import *
-
-# Page name "workflow" will show mzML file selector in sidebar
-params = page_setup(page="workflow")
-
-st.title("Workflow")
-
-# Define two widgets with values from parameter file
-# To save them as parameters use the same key as in the json file
-
-# We access the x-dimension via local variable
-xdimension = st.number_input(
-    label="x dimension", min_value=1, max_value=20, value=params["example-x-dimension"], step=1, key="example-x-dimension")
-
-st.number_input(label="x dimension", min_value=1, max_value=20,
-                value=params["example-y-dimension"], step=1, key="example-y-dimension")
-
-# Get a dataframe with x and y dimensions via time consuming (sleep) cached function
-# If the input has been given before, the function does not run again
-# Input x from local variable, input y from session state via key
-df = generate_random_table(xdimension, st.session_state["example-y-dimension"])
-
-# Display dataframe via custom show_table function, which
-show_table(df, download_name="random-table")
-
-# At the end of each page, always save parameters (including any changes via widgets with key)
-save_params(params)
-```
