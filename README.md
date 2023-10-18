@@ -4,7 +4,7 @@ Welcome to the OpenMS NuXL App, a web application for the NuXL protein-nucleic a
 
 ## NuXL
 
-- **Description:** NuXL is a dedicated software package designed for the analysis of XL-MS (cross-linking mass spectrometry) data obtained from UV and chemically crosslinked protein–RNA/DNA samples. This powerful tool allows for reliable, FDR-controlled assignment of protein–nucleic acid crosslinking sites in samples treated with UV light or chemical crosslinkers. It offers user-friendly matched spectra visualization, including ion annotations.[more](https://ssp2022.com/index.php/timetable/event/henning-urlaub/#:~:text=NuXL%20is%20available%20in%20the,spectra%20visualization%20including%20ion%20annotations.)
+- **Description:** NuXL is a dedicated software package designed for the analysis of XL-MS (cross-linking mass spectrometry) data obtained from UV and chemically crosslinked protein–RNA/DNA samples. This powerful tool allows for reliable, FDR-controlled assignment of protein–nucleic acid crosslinking sites in samples treated with UV light or chemical crosslinkers. It offers user-friendly matched spectra visualization, including ion annotations.[more](https://ssp2022.com/index.php/timetable/event/henning-urlaub/)
   
 **powered by:**
 
@@ -53,7 +53,8 @@ In the web app, collaborators can visualize files by sharing a unique workspace 
 ⚠️ Note: In the web app, all users with a unique workspace ID have the same rights.
 
 ## Contact
-For any inquiries or assistance, please feel free to reach out to us.
+For any inquiries or assistance, please feel free to reach out to us.<br/><br/>
+[![Discord Shield](https://img.shields.io/discord/832282841836159006?style=flat-square&message=Discord&color=5865F2&logo=Discord&logoColor=FFFFFF&label=Discord)](https://discord.gg/4TAGhqJ7s5) [![Gitter](https://img.shields.io/static/v1?style=flat-square&message=on%20Gitter&color=ED1965&logo=Gitter&logoColor=FFFFFF&label=Chat)](https://gitter.im/OpenMS/OpenMS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 <br/><br/>
 
 
