@@ -23,7 +23,7 @@ def main():
         """
     )
     #In docker, OpenMS-app (executable) can be downloadable from github
-    if Path("OpenMS-App.zip").exists():
+    if Path("OpenMS-NuXL.zip").exists():
         st.markdown(
             """
             ## Installation
@@ -32,11 +32,11 @@ def main():
 
             Simply download and extract the zip file. The folder contains an executable run_app file. No need to install anything.
             """)
-        with open("OpenMS-App.zip", "rb") as file:
+        with open("OpenMS-NuXL.zip", "rb") as file:
             st.download_button(
                         label="Download for Windows",
                         data=file,
-                        file_name="OpenMS-App.zip",
+                        file_name="OpenMS-NuXL.zip",
                         mime="archive/zip",
                         type="primary"
                     )
