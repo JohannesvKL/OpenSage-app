@@ -1,4 +1,4 @@
-name: Build executable for Windows
+name: Build executable for Windows_temp
 on: [push]
 
 jobs:
@@ -51,32 +51,16 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Cache contrib
-      id: cache-contrib-win
-      uses: actions/cache@v3
-      with:
-        path: ${{ github.workspace }}/OpenMS/contrib
-        key: ${{ runner.os }}-contrib3
-
-    - name: Load contrib build
-      if: steps.cache-contrib-win.outputs.cache-hit != 'true'
+    - name: Add contrib
+      shell: bash
       run: |
-          cd OpenMS/contrib
-          curl -o contribbld.tar.gz https://abibuilder.cs.uni-tuebingen.de/archive/openms/contrib/windows/x64/msvc-14.2/contrib_build.tar.gz
-          tar -xzf contribbld.tar.gz
-          rm contribbld.tar.gz
-
-    - name: Setup ccache cache
-      uses: actions/cache@v3
-      with:
-        path: .ccache
-        key: ${{ runner.os }}-ccache-${{ env.RUN_NAME }}-${{ github.run_number }}
-        # Restoring: From current branch, otherwise from base branch, otherwise from any branch.
-        restore-keys: |
-          ${{ runner.os }}-ccache-${{ env.RUN_NAME }}
-          ${{ runner.os }}-ccache-${{ env.BASE_REF }}
-          ${{ runner.os }}-ccache-
-
+          cd OpenMS
+          git submodule update --init contrib
+          cd ..
+          mkdir contrib-build
+          cd contrib-build
+          cmake -DBUILD_TYPE=ALL ../OpenMS/contrib
+          
     - name: Add THIRDPARTY
       shell: bash
       run: |
@@ -102,7 +86,7 @@ jobs:
           ctest --output-on-failure -V -S $GITHUB_WORKSPACE/OpenMS/tools/ci/cibuild.cmake
       env:
           #OS_PREFIX_PATH: "${{ env.Qt5_DIR }}/lib/cmake;${{ env.Qt5_DIR }}"
-          CONTRIB_BUILD_DIRECTORY: "${{ github.workspace }}/OpenMS/contrib"
+          CONTRIB_BUILD_DIRECTORY: "${{ github.workspace }}/OpenMS/contrib-build"
           CI_PROVIDER: "GitHub-Actions"
           CMAKE_GENERATOR: "Ninja"
           SOURCE_DIRECTORY: "${{ github.workspace }}/OpenMS"
@@ -117,12 +101,6 @@ jobs:
           USE_STATIC_BOOST: "On"
           #  BUILD_FLAGS: "-p:CL_MPCount=2" # For VS Generator and MSBuild
           BUILD_FLAGS: "-j2" # Ninja will otherwise use all cores (doesn't go well in GHA)
-          CMAKE_CCACHE_EXE: "ccache"
-          CCACHE_BASEDIR: ${{ github.workspace }}
-          CCACHE_DIR: ${{ github.workspace }}/.ccache
-          CCACHE_COMPRESS: true
-          CCACHE_COMPRESSLEVEL: 12
-          CCACHE_MAXSIZE: 400M
 
     - name: Test Windows
       shell: bash
