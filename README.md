@@ -1,6 +1,7 @@
 # OpenMS NuXL App [![Open Template!](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://openms-template.streamlit.app/)
 
 Welcome to the OpenMS NuXL App, a web application for the NuXL protein-nucleic acid search engine built using [OpenMS](https://openms.de/) and [pyOpenMS](https://pyopenms.readthedocs.io/en/latest/).
+**website:** [https://abi-services.cs.uni-tuebingen.de/nuxl/](https://abi-services.cs.uni-tuebingen.de/nuxl/)
 
 ## NuXL
 
@@ -12,11 +13,11 @@ Welcome to the OpenMS NuXL App, a web application for the NuXL protein-nucleic a
   
 ## Running NuXL locally: Installation as stand-alone tool
 ### Windows
-1. To get started, download and extract the [OpenMS-NuXL.zip](https://github.com/Arslan-Siraj/nuxl-app/actions) file from latest successfull action.
+1. To get started, download and extract the [OpenMS-App.zip](https://github.com/Arslan-Siraj/nuxl-app/actions) file from latest successfull action.
 2. Run the `run_app.exe`
 3. Use app in your default browser <br/>
 
-The workspaces for the project will be locally generated in the `workspaces-NuXL-app` directory, and the analysis will run using local resources.
+The workspaces for the project will be locally generated in the `workspaces-nuxl-app` directory, and the analysis will run using local resources.
    
 ## Quickstart 
 
