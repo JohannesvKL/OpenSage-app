@@ -23,58 +23,6 @@ if 'controllo' not in st.session_state or params["controllo"] == False:
 # title of page
 st.title("⚙️ Run Analysis")
 
-# make sure "selected-mzML-files" is in session state
-if "selected-mzML-files" not in st.session_state:
-    st.session_state["selected-mzML-files"] = params.get("selected-mzML-files", [])
-
-# make sure "selected-fasta-files" is in session state
-if "selected-fasta-files" not in st.session_state:
-    st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
-
-# make sure mzML example files in current session state
-load_example_mzML_files()
-
-# take mzML files from current session file
-mzML_files_ = [f.name for f in Path(st.session_state.workspace, "mzML-files").iterdir()]
-
-# selected mzML file from mzML files list
-selected_mzML_file = st.selectbox(
-    "choose mzML file",
-    [item for item in mzML_files_ if not item.endswith(".csv")]
-    ,
-    help="If file not here, please upload at File Upload"
-)
-
-# make sure fasta example files in current session state
-load_example_fasta_files()
-
-# take fasta files from current session file
-fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").iterdir()]
-
-# select fasta file from mzML files list
-selected_fasta_file = st.selectbox(
-    "choose fasta file",
-    [f.name for f in Path(st.session_state.workspace,
-                        "fasta-files").iterdir()],
-    help="If file not here, please upload at File Upload"
-)
-
-# take full path of mzML file
-if selected_mzML_file:
-    mzML_file_path = str(Path(st.session_state.workspace, "mzML-files", selected_mzML_file))
-
-# take full path of fasta file
-if selected_fasta_file:
-    database_file_path = str(Path(st.session_state.workspace, "fasta-files", selected_fasta_file))
-
-# out file path
-result_dir: Path = Path(st.session_state.workspace, "result-files")
-
-# create same output file path name as input file path
-mzML_file_name = os.path.basename(mzML_file_path)
-protocol_name = os.path.splitext(mzML_file_name)[0]
-result_path = os.path.join(result_dir, protocol_name + ".idXML")
-
 ######################## Take NuXL configurations ini read #################################
 # Define the sections you want to extract
 # will capture automaticaly if add new section as decoy_factor 
@@ -107,80 +55,153 @@ config_path = os.path.join(current_dir, 'assets', 'OpenMS_NuXL.ini')
         # })
 NuXL_config=ini2dict(config_path, sections)
 
-# take all variables settings from config dictionary/ take all user configuration
-cols=st.columns(2)
-with cols[0]:
-    cols_=st.columns(2)
-    with cols_[0]:
-        Enzyme = st.selectbox('Enzyme',NuXL_config['enzyme']['restrictions'], help=NuXL_config['enzyme']['description'])
-    with cols_[1]:
-        Missed_cleavages = str(st.number_input("Missed_cleavages",value=int(NuXL_config['missed_cleavages']['default']), help=NuXL_config['missed_cleavages']['description'] + " default: "+ NuXL_config['missed_cleavages']['default']))
-        if int(Missed_cleavages) <= 0:
-            st.error("Length must be a positive integer greater than 0")
+# make sure "selected-mzML-files" is in session state
+if "selected-mzML-files" not in st.session_state:
+    st.session_state["selected-mzML-files"] = params.get("selected-mzML-files", [])
 
-with cols[1]:
-    cols_=st.columns(2)
-    with cols_[0]:
-        peptide_min = str(st.number_input('peptide min length', value=int(NuXL_config['min_size']['default']), help=NuXL_config['min_size']['description'] + " default: "+ NuXL_config['min_size']['default']))
-        if int(peptide_min) < 1:
+# make sure "selected-fasta-files" is in session state
+if "selected-fasta-files" not in st.session_state:
+    st.session_state["selected-fasta-files"] = params.get("selected-fasta-files", [])
+
+# make sure mzML example files in current session state
+load_example_mzML_files()
+
+# take mzML files from current session file
+mzML_files_ = [f.name for f in Path(st.session_state.workspace, "mzML-files").iterdir()]
+
+if 'Trypsin' in NuXL_config['enzyme']['restrictions']:
+    NuXL_config['enzyme']['restrictions'].remove('Trypsin')
+    NuXL_config['enzyme']['restrictions'].insert(0, 'Trypsin')
+
+with st.form("fasta-upload", clear_on_submit=True):
+
+    # selected mzML file from mzML files list
+    selected_mzML_file = st.selectbox(
+        "choose mzML file",
+        [item for item in mzML_files_ if not item.endswith(".csv")]
+        ,
+        help="If file not here, please upload at File Upload"
+    )
+
+    # make sure fasta example files in current session state
+    load_example_fasta_files()
+
+    # take fasta files from current session file
+    fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").iterdir()]
+
+    # select fasta file from mzML files list
+    selected_fasta_file = st.selectbox(
+        "choose fasta file",
+        [f.name for f in Path(st.session_state.workspace,
+                            "fasta-files").iterdir()],
+        help="If file not here, please upload at File Upload"
+    )
+
+    # take full path of mzML file
+    if selected_mzML_file:
+        mzML_file_path = str(Path(st.session_state.workspace, "mzML-files", selected_mzML_file))
+
+    # take full path of fasta file
+    if selected_fasta_file:
+        database_file_path = str(Path(st.session_state.workspace, "fasta-files", selected_fasta_file))
+
+    # out file path
+    result_dir: Path = Path(st.session_state.workspace, "result-files")
+
+    # create same output file path name as input file path
+    mzML_file_name = os.path.basename(mzML_file_path)
+    protocol_name = os.path.splitext(mzML_file_name)[0]
+    result_path = os.path.join(result_dir, protocol_name + ".idXML")
+
+    # take all variables settings from config dictionary/ take all user configuration
+    cols=st.columns(2)
+    with cols[0]:
+        cols_=st.columns(2)
+        with cols_[0]:
+            Enzyme = st.selectbox('enzyme', NuXL_config['enzyme']['restrictions'], help=NuXL_config['enzyme']['description'])
+        with cols_[1]:
+            Missed_cleavages = str(st.number_input("missed cleavages",value=int(NuXL_config['missed_cleavages']['default']), help=NuXL_config['missed_cleavages']['description'] + " default: "+ NuXL_config['missed_cleavages']['default']))
+            if int(Missed_cleavages) <= 0:
                 st.error("Length must be a positive integer greater than 0")
 
-    with cols_[1]:
-        peptide_max= str(st.number_input('peptide max length', value=int(NuXL_config['max_size']['default']), help=NuXL_config['max_size']['description'] + " default: "+ NuXL_config['max_size']['default']))
-        if int(peptide_max) < 1:
-                st.error("Length must be a positive integer greater than 1")
+    with cols[1]:
+        cols_=st.columns(2)
+        with cols_[0]:
+            peptide_min = str(st.number_input('peptide min length', value=int(NuXL_config['min_size']['default']), help=NuXL_config['min_size']['description'] + " default: "+ NuXL_config['min_size']['default']))
+            if int(peptide_min) < 1:
+                    st.error("Length must be a positive integer greater than 0")
 
-cols=st.columns(2)
-with cols[0]:
-    cols_=st.columns(2)
-    with cols_[0]:
-        Precursor_MT = str(st.number_input("Precursor mass tolerance",value=float(NuXL_config['precursor_mass_tolerance']['default']), help=NuXL_config['precursor_mass_tolerance']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance']['default']))
-        if float(Precursor_MT) <= 0:
-            st.error("Precursor mass tolerance must be a positive integer")
+        with cols_[1]:
+            peptide_max= str(st.number_input('peptide max length', value=int(NuXL_config['max_size']['default']), help=NuXL_config['max_size']['description'] + " default: "+ NuXL_config['max_size']['default']))
+            if int(peptide_max) < 1:
+                    st.error("Length must be a positive integer greater than 1")
 
-    with cols_[1]:
-        Precursor_MT_unit= st.selectbox('Precursor mass tolerance unit',NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['precursor_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'])
+    cols=st.columns(2)
+    with cols[0]:
+        cols_=st.columns(2)
+        with cols_[0]:
+            Precursor_MT = str(st.number_input("precursor mass tolerance",value=float(NuXL_config['precursor_mass_tolerance']['default']), help=NuXL_config['precursor_mass_tolerance']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance']['default']))
+            if float(Precursor_MT) <= 0:
+                st.error("Precursor mass tolerance must be a positive integer")
 
+        with cols_[1]:
+            #Precursor_MT_unit= st.selectbox('precursor mass tolerance unit',NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['precursor_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'])
+            Precursor_MT_unit = cols_[1].radio(
+            "precursor mass tolerance unit",
+            NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
+            help=NuXL_config['precursor_mass_tolerance_unit']['description']  + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'],
+            key="Precursor_MT_unit"
+            )
 
-with cols[1]:
-    cols_=st.columns(2)
-    with cols_[0]:
-        Fragment_MT = str(st.number_input("Fragment mass tolerance",value=float(NuXL_config['fragment_mass_tolerance']['default']), help=NuXL_config['fragment_mass_tolerance']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance']['default']))
-        if float(Fragment_MT) <= 0:
-            st.error("Fragment mass tolerance must be a positive integer")
+    with cols[1]:
+        cols_=st.columns(2)
+        with cols_[0]:
+            Fragment_MT = str(st.number_input("fragment mass tolerance",value=float(NuXL_config['fragment_mass_tolerance']['default']), help=NuXL_config['fragment_mass_tolerance']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance']['default']))
+            if float(Fragment_MT) <= 0:
+                st.error("Fragment mass tolerance must be a positive integer")
 
-    with cols_[1]:
-        Fragment_MT_unit= st.selectbox('Fragment mass tolerance unit', NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['fragment_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'])
-    
+        with cols_[1]:
+            #Fragment_MT_unit= st.selectbox('fragment mass tolerance unit', NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['fragment_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'])
+            Fragment_MT_unit = cols_[1].radio(
+            "fragment mass tolerance unit",
+            NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
+            help=NuXL_config['fragment_mass_tolerance_unit']['description']+ " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'],
+            key="Fragment_MT_unit"
+            )
 
-cols=st.columns(2)
-with cols[0]:
-    preset = st.selectbox('Select the suitable preset',NuXL_config['presets']['restrictions'], help=NuXL_config['presets']['description'] + " default: "+ NuXL_config['presets']['default'])
-with cols[1]:
-    length= str(st.number_input("length",value=int(NuXL_config['length']['default']), help=NuXL_config['length']['description'] + " default: "+ NuXL_config['length']['default']))
-    if int(length) <= -1:
-        st.error("Length must be a positive integer.")
+    cols=st.columns(2)
+    with cols[0]:
+        preset = st.selectbox('select the suitable preset',NuXL_config['presets']['restrictions'], help=NuXL_config['presets']['description'] + " default: "+ NuXL_config['presets']['default'])
+    with cols[1]:
+        length = str(st.number_input("length of oligonucleotide",value=int(NuXL_config['length']['default']), help=NuXL_config['length']['description'] + " default: "+ NuXL_config['length']['default']))
+        if int(length) <= -1:
+            st.error("Length must be a positive integer.")
 
-cols=st.columns(2)
-with cols[0]:
-    fixed_modification = st.multiselect('Select fixed modifications:', NuXL_config['fixed']['restrictions'], help=NuXL_config['fixed']['description'] + " default: "+ NuXL_config['fixed']['default'])
+    cols=st.columns(2)
+    with cols[0]:
+        fixed_modification = st.multiselect('select fixed modifications:', NuXL_config['fixed']['restrictions'], help=NuXL_config['fixed']['description'] + " default: "+ NuXL_config['fixed']['default'])
 
-with cols[1]: 
-    variable_modification = st.multiselect('Select variable modifications:', NuXL_config['variable']['restrictions'], help=NuXL_config['variable']['description'] + " default: "+ NuXL_config['variable']['default'])
-    
-cols=st.columns(2)
-with cols[0]:
-    Variable_max_per_peptide  = str(st.number_input("Variable_max_per_peptide",value=int(NuXL_config['variable_max_per_peptide']['default']), help=NuXL_config['variable_max_per_peptide']['description'] + " default: "+ NuXL_config['variable_max_per_peptide']['default']))
-    if int(Variable_max_per_peptide) <= -1:
-        st.error("Variable_max_per_peptide must be a positive integer")
+    with cols[1]: 
+        variable_modification = st.multiselect('select variable modifications:', NuXL_config['variable']['restrictions'], help=NuXL_config['variable']['description'] + " default: "+ NuXL_config['variable']['default'], default = "Oxidation (M)")
+        
+    cols=st.columns(2)
+    with cols[0]:
+        Variable_max_per_peptide  = str(st.number_input("variable modification max per peptide",value=int(NuXL_config['variable_max_per_peptide']['default']), help=NuXL_config['variable_max_per_peptide']['description'] + " default: "+ NuXL_config['variable_max_per_peptide']['default']))
+        if int(Variable_max_per_peptide) <= -1:
+            st.error("variable modification max per peptide must be a positive integer")
 
-with cols[1]:
-    scoring  = st.selectbox('Select the scoring method',NuXL_config['scoring']['restrictions'], help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'])
-
+    with cols[1]:
+        #scoring  = st.selectbox('select the scoring method',NuXL_config['scoring']['restrictions'], help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'])
+        scoring = cols[1].radio(
+        "select the scoring method",
+        [NuXL_config['scoring']['restrictions'][1], NuXL_config['scoring']['restrictions'][0]],
+        help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'],
+        key="scoring"
+        )
 
 ##################################### NuXL command (subprocess) ############################
 
-# result dictionary to capture ooutput of subprocess
+# result dictionary to capture output of subprocess
 result_dict = {}
 result_dict["success"] = False
 result_dict["log"] = " "
@@ -195,10 +216,10 @@ def terminate_subprocess():
     terminate_flag.set()
 
 # run analysis 
-if st.button("Run-analysis"):
+if cols[0].form_submit_button("Run-analysis", type="primary"):
 
     # To terminate subprocess and clear form
-    if st.button("Terminate/Clear"):
+    if st.button("Terminate/Clear", key="terminate-button", type="secondary"):
         #terminate subprocess
         terminate_subprocess()
         st.warning("Process terminated. The analysis may not be complete.")
