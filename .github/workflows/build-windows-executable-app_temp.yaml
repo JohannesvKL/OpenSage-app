@@ -1,5 +1,6 @@
 name: Build executable for Windows_temp
-on: [push]
+on: #[push]
+  workflow_dispatch:
 
 jobs:
   build-openms:
