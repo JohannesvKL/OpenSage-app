@@ -69,11 +69,18 @@ load_example_mzML_files()
 # take mzML files from current session file
 mzML_files_ = [f.name for f in Path(st.session_state.workspace, "mzML-files").iterdir()]
 
+# make sure fasta example files in current session state
+load_example_fasta_files()
+
+# take fasta files from current session file
+fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").iterdir()]
+
+# put Trypsin as first enzyme
 if 'Trypsin' in NuXL_config['enzyme']['restrictions']:
     NuXL_config['enzyme']['restrictions'].remove('Trypsin')
     NuXL_config['enzyme']['restrictions'].insert(0, 'Trypsin')
 
-with st.form("fasta-upload", clear_on_submit=True):
+with st.form("fasta-upload", clear_on_submit=False):
 
     # selected mzML file from mzML files list
     selected_mzML_file = st.selectbox(
@@ -82,12 +89,6 @@ with st.form("fasta-upload", clear_on_submit=True):
         ,
         help="If file not here, please upload at File Upload"
     )
-
-    # make sure fasta example files in current session state
-    load_example_fasta_files()
-
-    # take fasta files from current session file
-    fasta_files = [f.name for f in Path(st.session_state.workspace,"fasta-files").iterdir()]
 
     # select fasta file from mzML files list
     selected_fasta_file = st.selectbox(
@@ -104,14 +105,6 @@ with st.form("fasta-upload", clear_on_submit=True):
     # take full path of fasta file
     if selected_fasta_file:
         database_file_path = str(Path(st.session_state.workspace, "fasta-files", selected_fasta_file))
-
-    # out file path
-    result_dir: Path = Path(st.session_state.workspace, "result-files")
-
-    # create same output file path name as input file path
-    mzML_file_name = os.path.basename(mzML_file_path)
-    protocol_name = os.path.splitext(mzML_file_name)[0]
-    result_path = os.path.join(result_dir, protocol_name + ".idXML")
 
     # take all variables settings from config dictionary/ take all user configuration
     cols=st.columns(2)
@@ -198,6 +191,14 @@ with st.form("fasta-upload", clear_on_submit=True):
         help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'],
         key="scoring"
         )
+ 
+# out file path
+result_dir: Path = Path(st.session_state.workspace, "result-files")
+
+# create same output file path name as input file path
+mzML_file_name = os.path.basename(mzML_file_path)
+protocol_name = os.path.splitext(mzML_file_name)[0]
+result_path = os.path.join(result_dir, protocol_name + ".idXML")
 
 ##################################### NuXL command (subprocess) ############################
 
