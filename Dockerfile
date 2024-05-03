@@ -135,4 +135,8 @@ RUN WORKFLOW_ID=$(curl -s "https://api.github.com/repos/$GITHUB_USER/$GITHUB_REP
 
 # Run app as container entrypoint.
 EXPOSE $PORT
-ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Write all package versions to one file
+#RUN mamba list --explicit | grep -E "streamlit|streamlit-plotly-events|streamlit-aggrid|pyopenms|captcha|python|plotly|pandas|numpy|mono" > package_versions_in_docker.txt
+
+ENTRYPOINT ["/app/entrypoint.sh"] 
