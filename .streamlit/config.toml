@@ -1,5 +1,5 @@
 [server]
-maxUploadSize = 50000
+maxUploadSize = 5000 #5GB
 
 [theme]
 
