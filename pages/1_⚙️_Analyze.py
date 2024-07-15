@@ -34,11 +34,13 @@ sections = [
     "scoring",
     "variable_max_per_peptide",
     "length",
-    "mass_tolerance", # will store in config dict both precursor_mass_tolerance_unit, and fragmant_mass_tolerance_unit
-    "mass_tolerance_unit", # will store in config dict both precursor_mass_tolerance, and fragmant_mass_tolerance
+    "mass_tolerance_right", # will store in config dict both precursor_mass_tolerance, and fragmant_mass_tolerance
+    "mass_tolerance_left", 
+    "mass_tolerance_unit", # will store in config dict both precursor_mass_tolerance_unit, and fragmant_mass_tolerance_unit
     "min_size",
     "max_size",
-    "missed_cleavages"
+    "missed_cleavages", 
+    "Test"
 ]
 
 # current directory
@@ -54,6 +56,10 @@ config_path = os.path.join(current_dir, 'assets', 'OpenMS_NuXL.ini')
         #"restrictions": restrictions_list
         # })
 NuXL_config=ini2dict(config_path, sections)
+
+#print(NuXL_config.keys())
+#print(NuXL_config["precursor_mass_tolerance_left"])
+
 
 # make sure "selected-mzML-files" is in session state
 if "selected-mzML-files" not in st.session_state:
@@ -133,46 +139,56 @@ with st.form("fasta-upload", clear_on_submit=False):
     with cols[0]:
         cols_=st.columns(2)
         with cols_[0]:
-            Precursor_MT = str(st.number_input("precursor mass tolerance",value=float(NuXL_config['precursor_mass_tolerance']['default']), help=NuXL_config['precursor_mass_tolerance']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance']['default']))
-            if float(Precursor_MT) <= 0:
+            Precursor_MT_right = str(st.number_input("precursor mass tolerance right",value=float(NuXL_config['precursor_mass_tolerance_right']['default']), help=NuXL_config['precursor_mass_tolerance_right']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_right']['default']))
+            if float(Precursor_MT_right) <= 0:
                 st.error("Precursor mass tolerance must be a positive integer")
 
         with cols_[1]:
+            Precursor_MT_left = str(st.number_input("precursor mass tolerance left",value=float(NuXL_config['precursor_mass_tolerance_left']['default']), help=NuXL_config['precursor_mass_tolerance_left']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_left']['default']))
+            if float(Precursor_MT_left) >= 0:
+                st.error("Precursor mass tolerance must be a negative integer")
             #Precursor_MT_unit= st.selectbox('precursor mass tolerance unit',NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['precursor_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'])
-            Precursor_MT_unit = cols_[1].radio(
-            "precursor mass tolerance unit",
-            NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
-            help=NuXL_config['precursor_mass_tolerance_unit']['description']  + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'],
-            key="Precursor_MT_unit"
-            )
-
+            
     with cols[1]:
         cols_=st.columns(2)
         with cols_[0]:
-            Fragment_MT = str(st.number_input("fragment mass tolerance",value=float(NuXL_config['fragment_mass_tolerance']['default']), help=NuXL_config['fragment_mass_tolerance']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance']['default']))
-            if float(Fragment_MT) <= 0:
+            Fragment_MT_right = str(st.number_input("fragment mass tolerance right",value=float(NuXL_config['fragment_mass_tolerance_right']['default']), help=NuXL_config['fragment_mass_tolerance_right']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_right']['default']))
+            if float(Fragment_MT_right) <= 0:
                 st.error("Fragment mass tolerance must be a positive integer")
-
-        with cols_[1]:
-            #Fragment_MT_unit= st.selectbox('fragment mass tolerance unit', NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['fragment_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'])
-            Fragment_MT_unit = cols_[1].radio(
-            "fragment mass tolerance unit",
-            NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
-            help=NuXL_config['fragment_mass_tolerance_unit']['description']+ " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'],
-            key="Fragment_MT_unit"
-            )
+        with cols_[1]: 
+            Fragment_MT_left = str(st.number_input("fragment mass tolerance left",value=float(NuXL_config['fragment_mass_tolerance_left']['default']), help=NuXL_config['fragment_mass_tolerance_left']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_left']['default']))
+            if float(Fragment_MT_left) >= 0:
+                st.error("Fragment mass tolerance must be a negative integer")
 
     cols=st.columns(2)
-    with cols[0]:
-        preset = st.selectbox('select the suitable preset',NuXL_config['presets']['restrictions'], help=NuXL_config['presets']['description'] + " default: "+ NuXL_config['presets']['default'])
-    with cols[1]:
-        length = str(st.number_input("length of oligonucleotide",value=int(NuXL_config['length']['default']), help=NuXL_config['length']['description'] + " default: "+ NuXL_config['length']['default']))
-        if int(length) <= -1:
-            st.error("Length must be a positive integer.")
+    with cols[0]: 
+        Precursor_MT_unit = cols[0].radio(
+        "precursor mass tolerance unit",
+        NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
+        help=NuXL_config['precursor_mass_tolerance_unit']['description']  + " default: "+ NuXL_config['precursor_mass_tolerance_unit']['default'],
+        key="Precursor_MT_unit"
+        )
 
+    with cols[1]: 
+        #Fragment_MT_unit= st.selectbox('fragment mass tolerance unit', NuXL_config['precursor_mass_tolerance_unit']['restrictions'], help=NuXL_config['fragment_mass_tolerance_unit']['description'] + " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'])
+        Fragment_MT_unit = cols[1].radio(
+        "fragment mass tolerance unit",
+        NuXL_config['precursor_mass_tolerance_unit']['restrictions'], 
+        help=NuXL_config['fragment_mass_tolerance_unit']['description']+ " default: "+ NuXL_config['fragment_mass_tolerance_unit']['default'],
+        key="Fragment_MT_unit"
+        )
+
+    #cols=st.columns(2)
+    #with cols[0]:
+    #    preset = st.selectbox('select the suitable preset',NuXL_config['presets']['restrictions'], help=NuXL_config['presets']['description'] + " default: "+ NuXL_config['presets']['default'])
+    #with cols[1]:
+    #    length = str(st.number_input("length of oligonucleotide",value=int(NuXL_config['length']['default']), help=NuXL_config['length']['description'] + " default: "+ NuXL_config['length']['default']))
+    #    if int(length) <= -1:
+    #        st.error("Length must be a positive integer.")
+    
     cols=st.columns(2)
     with cols[0]:
-        fixed_modification = st.multiselect('select fixed modifications:', NuXL_config['fixed']['restrictions'], help=NuXL_config['fixed']['description'] + " default: "+ NuXL_config['fixed']['default'])
+        fixed_modification = st.multiselect('select fixed modifications:', NuXL_config['fixed']['restrictions'], help=NuXL_config['fixed']['description'] + " default: "+ NuXL_config['fixed']['default'], default = "Carbamidomethyl (C)")
 
     with cols[1]: 
         variable_modification = st.multiselect('select variable modifications:', NuXL_config['variable']['restrictions'], help=NuXL_config['variable']['description'] + " default: "+ NuXL_config['variable']['default'], default = "Oxidation (M)")
@@ -226,44 +242,47 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
         st.warning("Process terminated. The analysis may not be complete.")
         #clear form
         st.experimental_rerun() 
-
+    
+    sage_exec = "/Users/johannes/Desktop/openminded-sagews/sage/target/release"
+    SageAdapter = "/Users/johannes/openms-development/openms_build/bin"
     # with st.spinner("Running analysis... Please wait until analysis done 😑"): #without status/ just spinner button
     with st.status("Running analysis... Please wait until analysis done 😑"):
         # If session state is local
         if st.session_state.location == "local":
 
             # If local in current directory of app  like bin and percolator folder
-            OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
-            perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
+            #OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
+            #perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
             
-            args = [OpenNuXL_exec, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                        "-peptide:min_size", peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme, 
-                        "-modifications:variable_max_per_peptide", Variable_max_per_peptide
+            
+            args = [SageAdapter, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path,
+                         "-precursor_tol_left",  Precursor_MT_left, "-precursor_tol_right", Precursor_MT_right, "-precursor_tol_unit",  Precursor_MT_unit,
+                        "-fragment_tol_left",  Fragment_MT_left, "-fragment_tol_right", Fragment_MT_right , "-fragment_tol_unit",  Fragment_MT_unit,
+                        "min_len", peptide_min, "max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
+                        "max_variable_mods", Variable_max_per_peptide, "-sage_executable", sage_exec
                         ]
 
-            args.extend(["-percolator_executable", perc_exec])
+            #args.extend(["-percolator_executable", perc_exec])
 
         # If session state is online/docker
         else:     
 
-            # In docker it executable on path
-            args = ["OpenNuXL", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path, "-NuXL:presets", preset, 
-                        "-NuXL:length", length, "-NuXL:scoring", scoring, "-precursor:mass_tolerance",  Precursor_MT, "-precursor:mass_tolerance_unit",  Precursor_MT_unit,
-                        "-fragment:mass_tolerance",  Fragment_MT, "-fragment:mass_tolerance_unit",  Fragment_MT_unit,
-                        "-peptide:min_size", peptide_min, "-peptide:max_size",peptide_max, "-peptide:missed_cleavages",Missed_cleavages, "-peptide:enzyme", Enzyme,
-                        "-modifications:variable_max_per_peptide", Variable_max_per_peptide
+            # In docker it executable on path            
+            args = ["SageAdapter", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path,
+                         "-precursor_tol_left",  Precursor_MT_left, "-precursor_tol_right", Precursor_MT_right, "-precursor_tol_unit",  Precursor_MT_unit,
+                        "-fragment_tol_left",  Fragment_MT_left, "-fragment_tol_right", Fragment_MT_right , "-fragment_tol_unit",  Fragment_MT_unit,
+                        "min_len", peptide_min, "max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
+                        "max_variable_mods", Variable_max_per_peptide, "-sage_executable", sage_exec
                         ]
         
         # If variable modification provided
         if variable_modification: 
-            args.extend(["-modifications:variable"])
+            args.extend(["-variable_modifications"])
             args.extend(variable_modification)
 
         # If fixed modification provided
         if fixed_modification: 
-            args.extend(["-modifications:fixed"])
+            args.extend(["-fixed_modifications"])
             args.extend(fixed_modification)
         
         # Add any additional variables needed for the subprocess (if any)
@@ -274,6 +293,7 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
         # st.code(message)
 
         # run subprocess command
+        print(st.session_state.location)
         run_subprocess(args, variables, result_dict)
         
 
@@ -285,12 +305,13 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
 
     # if run_subprocess success (no need if not success because error will show/display in run_subprocess command)
     if result_dict["success"]:
-
+        print("Great Success! I liek! ")
         # add .mzML.ambigious_masses.csv in result directory 
-        add_this_result_file(f"{protocol_name}.mzML.ambigious_masses.csv", Path(st.session_state.workspace, "mzML-files"))
+        #add_this_result_file(f"{protocol_name}.mzML.ambigious_masses.csv", Path(st.session_state.workspace, "mzML-files"))
+        add_this_result_file("OutputTable.tsv", Path(st.session_state.workspace, "output-files"))
         
         # remove .mzML.ambigious_masses.csv from mzML directory
-        remove_this_mzML_file(f"{protocol_name}.mzML.ambigious_masses.csv")
+        #remove_this_mzML_file(f"{protocol_name}.mzML.ambigious_masses.csv")
 
         # Save the log to a text file in the result_dir
         log_file_path = result_dir / f"{protocol_name}_log.txt"
@@ -310,15 +331,15 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
         show_table(df)
 
         # check if perc files availabe in some cases could not run percolator e-g if identification hits are so less
-        perc_exec = any("_perc_" in string for string in current_analysis_files)
+        #perc_exec = any("_perc_" in string for string in current_analysis_files)
 
         # just show and download the identification_files of XLs PSMs/PRTs if perc_XLs available otherwise without the percolator identification file
-        if perc_exec :
-            identification_files = [string for string in current_analysis_files if "_perc_0.0100_XLs"  in string or "_perc_0.1000_XLs" in string or "_perc_1.0000_XLs" in string or "_perc_proteins" in string]
-        else:
-            identification_files = [string for string in current_analysis_files if "_XLs"  in string or "_proteins" in string]
+        #if perc_exec :
+        #    identification_files = [string for string in current_analysis_files if "_perc_0.0100_XLs"  in string or "_perc_0.1000_XLs" in string or "_perc_1.0000_XLs" in string or "_perc_proteins" in string]
+        #else:
+        #    identification_files = [string for string in current_analysis_files if "_XLs"  in string or "_proteins" in string]
 
         # then download link for identification file of above criteria 
-        download_selected_result_files(identification_files, f":arrow_down: {protocol_name}_XL_identification_files")
+        #download_selected_result_files(All_files, f":arrow_down: {protocol_name}_results")
 
 save_params(params)

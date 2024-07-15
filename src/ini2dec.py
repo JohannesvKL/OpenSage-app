@@ -20,8 +20,10 @@ def ini2dict(path: str, sections: list):
     config_dict = {}
     
     # dictionaries used to capture these variable from sections
-    precursor_mass_tolerance = {}
-    fragment_mass_tolerance = {}
+    precursor_mass_tolerance_right = {}
+    precursor_mass_tolerance_left = {}
+    fragment_mass_tolerance_right = {}
+    fragment_mass_tolerance_left = {}
     precursor_mass_tolerance_unit = {}
     fragment_mass_tolerance_unit = {}
     
@@ -33,6 +35,8 @@ def ini2dict(path: str, sections: list):
             node_default = str(node.get("value"))
             node_desc = str(node.get("description"))
             node_rest = str(node.get("restrictions"))
+
+            print(node_desc)
 
             # change the string representation to list of strings
             restrictions_list = node_rest.split(',') if node_rest else []
@@ -46,13 +50,23 @@ def ini2dict(path: str, sections: list):
 
             # because the mass tolerance same section in ini file, so need to validate from descriptions
             
-            if "Precursor mass tolerance" in node_desc:  
-                entry["name"] = "precursor_mass_tolerance"
-                precursor_mass_tolerance = entry
+            if "Precursor mass tolerance +" in node_desc:  
+                entry["name"] = "precursor_mass_tolerance_right"
+                precursor_mass_tolerance_right = entry
+                print("Reached")
                 
-            if "Fragment mass tolerance" in node_desc: 
-                entry["name"] = "fragment_mass_tolerance"
-                fragment_mass_tolerance = entry
+            
+            if "Precursor mass tolerance -" in node_desc:  
+                entry["name"] = "precursor_mass_tolerance_left"
+                precursor_mass_tolerance_left = entry
+                
+            if "Fragment mass tolerance +" in node_desc: 
+                entry["name"] = "fragment_mass_tolerance_right"
+                fragment_mass_tolerance_right = entry
+
+            if "Fragment mass tolerance -" in node_desc: 
+                entry["name"] = "fragment_mass_tolerance_left"
+                fragment_mass_tolerance_left = entry
 
             if "Unit of precursor mass tolerance" in node_desc:  
                 entry["name"] = "precursor_mass_tolerance_unit"
@@ -66,9 +80,13 @@ def ini2dict(path: str, sections: list):
         config_dict[section_name] = entry
 
         # add mass tolerance dictionaries to config
-        if "mass_tolerance" in section_name:
-            config_dict["precursor_mass_tolerance"] = precursor_mass_tolerance
-            config_dict["fragment_mass_tolerance"] = fragment_mass_tolerance
+        if "mass_tolerance_right" in section_name:
+            config_dict["precursor_mass_tolerance_right"] = precursor_mass_tolerance_right     
+            config_dict["fragment_mass_tolerance_right"] = fragment_mass_tolerance_right
+        
+        if "mass_tolerance_left" in section_name:
+            config_dict["precursor_mass_tolerance_left"] = precursor_mass_tolerance_left
+            config_dict["fragment_mass_tolerance_left"] = fragment_mass_tolerance_left
             
         # add mass tolerance unit dictionaries to config
         if "mass_tolerance_unit" in section_name:

@@ -4,6 +4,8 @@ import shutil
 import base64
 import pandas as pd
 import streamlit as st
+import pyopenms
+
 from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
