@@ -12,8 +12,8 @@ import streamlit as st
 import pandas as pd
 
 # set these variables according to your project
-APP_NAME = "NuXL"
-REPOSITORY_NAME = "nuxl-app"
+APP_NAME = "SageAdapterApp"
+REPOSITORY_NAME = "SageAdapter"
 
 
 def load_params(default: bool = False) -> dict[str, Any]:

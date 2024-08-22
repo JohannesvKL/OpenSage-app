@@ -2,9 +2,10 @@ import streamlit as st
 from src.common import *
 from src.result_files import *
 import plotly.graph_objects as go
-from src.view import plot_ms2_spectrum
+from src.view import plot_ms2_spectrum, plot_ms2_spectrum_full
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, ColumnsAutoSizeMode
 from src.captcha_ import *
+from pyopenms import *
 
 params = page_setup()
 
@@ -12,7 +13,88 @@ params = page_setup()
 if 'controllo' not in st.session_state or params["controllo"] == False:
     # Apply captcha by calling the captcha_control function
     captcha_control()
+
+
+##################################
+
+#TODO move to src folder
+def process_mzML_file(filepath):
+    """
+    Loads an mzML file, extracts MS2 spectra, and normalizes the peak intensities.
+
+    Parameters:
+    filepath (str): The file path to the mzML file.
+
+    Returns:
+    MSExperiment: An MSExperiment object containing the normalized MS2 spectra.
+    """
+
+    try:
+        # Initialize an MSExperiment object
+        exp = MSExperiment()
         
+        # Load the mzML file into the MSExperiment object
+        MzMLFile().load(filepath, exp)
+
+        # Create a new MSExperiment object to store MS2 spectra
+        MS2 = MSExperiment()
+        
+        # Iterate over all spectra in the experiment
+        for spec in exp:
+            # Check if the spectrum is an MS2 spectrum
+            if spec.getMSLevel() == 2:
+                # Add the MS2 spectrum to the MS2 experiment object
+                MS2.addSpectrum(spec)
+
+        # Normalize peak intensities in the MS2 spectra
+        normalizer = Normalizer()  # Create a Normalizer object
+        param = normalizer.getParameters()  # Get the default parameters
+        param.setValue("method", "to_one")  # Set normalization method to "to_one"
+        normalizer.setParameters(param)  # Apply the parameters to the normalizer
+        normalizer.filterPeakMap(MS2)  # Normalize the peaks in the MS2 spectra
+
+        return MS2  # Return the MSExperiment object containing normalized MS2 spectra
+
+    except Exception as e:
+        return None  # Return None if any exception occurs
+
+def get_mz_intensities_from_ms2(MS2_spectras, native_id):
+    """
+    Extracts m/z values and corresponding intensities from an MS2 spectrum with a specified native ID.
+
+    Parameters:
+    MS2_spectras (MSExperiment): An MSExperiment object containing MS2 spectra.
+    native_id (str): The native ID of the desired MS2 spectrum.
+
+    Returns:
+    tuple: A tuple containing two arrays:
+        - mz (list): List of m/z values.
+        - intensities (list): List of corresponding intensity values.
+
+    If the specified native ID is not found, the function returns None.
+    """
+    # Iterate through all spectra in the provided MS2_spectras object
+    for spectrum in MS2_spectras.getSpectra():
+        # Check if the current spectrum's native ID matches the specified native ID
+        if spectrum.getNativeID() == native_id:
+            # Extract m/z values and corresponding intensities from the spectrum
+            mz, intensities = spectrum.get_peaks()
+            # Return the m/z values and intensities as a tuple
+            return mz, intensities
+    
+    # If the native ID is not found, return None
+    return None
+
+def remove_substrings(original_string, substrings_to_remove):
+    modified_string = original_string
+    for substring in substrings_to_remove:
+        modified_string = modified_string.replace(substring, "")
+    return modified_string
+
+nuxl_out_pattern = ["_perc_0.0100_XLs.idXML", "_0.0100_XLs.idXML", "_perc_0.1000_XLs.idXML", "_0.1000_XLs.idXML", "_perc_1.0000_XLs.idXML", "_1.0000_XLs.idXML"]
+
+########################
+
 ### main content of page
 
 # Make sure "selected-result-files" is in session state
@@ -32,36 +114,58 @@ tabs = st.tabs(tabs)
 #with View Results tab
 with tabs[0]:  
 
-    #make sure load all example result files
-    load_example_result_files()
-    # take all .idXML files in current session files; .idXML is CSMs 
-    session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if (f.name.endswith(".idXML") and "_XLs" in f.name)]
-    # select box to select .idXML file to see the results
-    selected_file = st.selectbox("choose a currently protocol file to view",session_files)
-
-    #current workspace session path
-    workspace_path = Path(st.session_state.workspace)
-    #tabs on page to show different results
-    tabs_ = st.tabs(["CSMs Table", "PRTs Table", "PRTs Summary", "Crosslink efficiency", "Precursor adducts summary"])
+    tabs_ = st.tabs(["CSMs Table", "PTMs Table"])
+    
 
     ## selected .idXML file
-    if selected_file:
+    
         #with CSMs Table
-        with tabs_[0]:
+    with tabs_[0]:
+        load_example_result_files()
+        # take all .idXML files in current session files; .idXML is CSMs 
+        session_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if (f.name.endswith(".idXML"))]
+        # select box to select .idXML file to see the results
+        selected_file = st.selectbox("choose a currently protocol file to view",session_files)
+
+        #current workspace session path
+        workspace_path = Path(st.session_state.workspace)
+        #tabs on page to show different results
+        
+        if selected_file:
             #st.write("CSMs Table")
             #take all CSMs as dataframe
             CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}")
+            #st.write(selected_file)
 
-            #check if dataframe is None
+            ##TODO setup more better/effiecient
+            # Remove the out pattern of idxml
+            #file_name_wout_out = remove_substrings(selected_file, nuxl_out_pattern)
+
+            if (selected_file.find("Example") != -1): 
+               file_name_wout_out = "Example_RNA_UV_XL"
+            else: 
+                file_name_wout_out = selected_file.replace(".idXML", "")
+
+            #st.write( os.path.join(Path.cwd().parent ,  str(st.session_state.workspace)[3:] , "mzML-files" ,f"{file_name_wout_out}.mzML"))
+
+            #if os.path.isfile(os.path.join(Path.cwd().parent ,  str(st.session_state.workspace)[3:] , "mzML-files" ,f"{file_name_wout_out}.mzML")): 
+                #st.write("File found")
+
+            MS2 = process_mzML_file(os.path.join(Path.cwd().parent ,  str(st.session_state.workspace)[3:] , "mzML-files" ,f"{file_name_wout_out}.mzML"))
+            if MS2 is None:
+                st.warning("The corresponding " +  ".mzML file could not be found. Please re-upload the mzML file to visualize all peaks.")
+                            
             if CSM_ is None: 
                 st.warning("No CSMs found in selected idXML file")
             else:
                 
-                if CSM_['NuXL:NA'].str.contains('none').any():
-                    st.warning("nonXL CSMs found")  
-                else:
+                #if CSM_['NuXL:NA'].str.contains('none').any():
+                #    st.warning("nonXL CSMs found")  
+                #else:
                 
                     # provide dataframe
+                    #st.write(list(CSM_.columns.values))
+                    
                     gb = GridOptionsBuilder.from_dataframe(CSM_[list(CSM_.columns.values)])
 
                     # configure selection
@@ -69,6 +173,8 @@ with tabs[0]:
                     gb.configure_side_bar()
                     gb.configure_pagination(enabled=True, paginationAutoPageSize=False, paginationPageSize=10)
                     gridOptions = gb.build()
+
+
                     
                     data = AgGrid(CSM_,
                                 gridOptions=gridOptions,
@@ -82,176 +188,132 @@ with tabs[0]:
                     #select row by user
                     selected_row = data["selected_rows"]
 
-                    if selected_row:
+                   
 
+                    #st.write(selected_row)
+                    
+                    #st.write(type(selected_row))
+                    #st.write(selected_row.get(0))
+                    #st.write(selected_row["Label"])
+                    #st.write( selected_row[ "Label"] )
+                    #st.write(selected_row['intensities'])
+
+                    if not(selected_row is None):
                         # Create a dictionary of annotation features
-                        annotation_data = {'intarray': [float(value) for value in {selected_row[0]['intensities']}.pop().split(',')],
-                                'mzarray': [float(value) for value in {selected_row[0]['mz_values']}.pop().split(',')],
-                                'anotarray': [str(value) for value in {selected_row[0]['ions']}.pop().split(',')]
+                        annotation_data_idxml = {'intarray': [float(value) for value in {selected_row['intensities'][0]}.pop().split(',')],
+                                'mzarray': [float(value) for value in {selected_row['mz_values'][0]}.pop().split(',')],
+                                'anotarray': [str(value) for value in {selected_row['ions'][0]}.pop().split(',')]
                             }
                         
+                        #annotation_data_idxml_df = pd.DataFrame(annotation_data_idxml)
+                        #annotation_data_idxml_df.to_csv(str(selected_row[0]['ScanNr']) + "_idxml_annot.csv")
+                        #st.write("ANOT:", annotation_data_idxml["anotarray"])
+                        #st.write("MZ:",annotation_data_idxml["mzarray"])
+                        #st.write("INT:",annotation_data_idxml["intarray"])
+
+
+                        if MS2 is not None:
+                            # Extract m/z and intensity data from the selected MS2 spectrum
+                            mz_full, inten_full = get_mz_intensities_from_ms2(MS2_spectras=MS2, native_id=selected_row['SpecId'][0])
+                            #st.write("MZFULL: ",list(mz_full) )
+                            #st.write("INTENFULL: ",list(inten_full) )
+                            scaled = []
+                            for i in annotation_data_idxml['intarray']: 
+                                scaled.append(i/max(annotation_data_idxml['intarray']))
+                            
+                            #st.write("scaled", scaled)
+                            # Convert annotation_data into a dictionary for efficient matching
+                            annotation_dict = {(round(mz, 2)): (anot, i) for i, mz, anot in zip(scaled, annotation_data_idxml['mzarray'], annotation_data_idxml['anotarray'])}
+
+                            #st.write(list(zip(scaled, annotation_data_idxml['mzarray'], annotation_data_idxml['anotarray'])))
+                            #st.write(annotation_dict.keys())
+                            #st.write(annotation_dict.values())
+
+                            # Annotate the data
+                            annotation_data = []
+                            for intensity, mz in zip(inten_full, mz_full):
+                                mz_r = round(float(mz), 2)
+                                int_r = round(float(intensity), 2)
+                                #st.write(mz_r)
+                                annotation = annotation_dict.get(mz_r, (' ', int_r))
+                                #st.write(annotation)
+                                annotation_data.append({
+                                    'mzarray': mz_r,
+                                    'intarray': annotation[1],
+                                    'anotarray': annotation[0]
+                                }) 
+                        
+                        if MS2 is None:
+                            annotation_data = annotation_data_idxml # just provide the annotated peaks
+                            st.write("MS2 was none")
+ 
                         # Check if the lists are not empty
-                        if annotation_data['intarray'] and annotation_data['mzarray'] and annotation_data['anotarray']:
+                        if annotation_data:
+                            #st.write("Gets to annotation data")
                             # Create the DataFrame
                             annotation_df = pd.DataFrame(annotation_data)
-                            # title of spectra
-                            spectra_name = os.path.splitext(selected_file)[0] +" Scan# " + str({selected_row[0]['ScanNr']}).strip('{}') + " Pep: " + str({selected_row[0]['Peptide']}).strip('{}\'') +  " + " +str ({selected_row[0]['NuXL:NA']}).strip('{}\'')
+                            #st.write(annotation_df)
+                            # title of spectra #Maybe remove NuXL:na
+                            spectra_name = os.path.splitext(selected_file)[0] +" Scan# " + str({selected_row['ScanNr'][0]}).strip('{}') + " Pep: " + str({selected_row['Peptide'][0]}).strip('{}\'') 
                             # generate ms2 spectra
-                            fig = plot_ms2_spectrum(annotation_df, spectra_name, "black")
+                            fig = plot_ms2_spectrum_full(annotation_df, spectra_name, "black")
                             #show figure
-                            show_fig(fig,  f"{os.path.splitext(selected_file)[0]}_scan_{str({selected_row[0]['ScanNr']}).strip('{}')}")
+                            show_fig(fig,  f"{os.path.splitext(selected_file)[0]}_scan_{str({selected_row['ScanNr'][0]}).strip('{}')}")
 
                         else:
                             # if any list empty
                             st.warning("Annotation not available for this peptide")
                                 
         #with PRTs Table
-        with tabs_[1]:
-            # Extracting components from the input filename to show the result of corresponding proteins file
-            parts = selected_file.split('_')
-            prefix = '_'.join(parts[:-2])  # Joining all parts except the last two
-            perc_value = parts[-2]  # Extracting the same FDR file
+    with tabs_[1]:
+            
+            #Make bar plots for various Output files 
 
+            ptm_output_files = [f.name for f in Path(st.session_state.workspace,"result-files").iterdir() if (f.name.find("OutputTable.tsv")) != -1]
+            selected_ptm_files = st.multiselect("choose a PTM-output file to view",ptm_output_files)
             # Creating the new filename as same as selected idXML file
-            new_filename = f"{prefix}_proteins{perc_value}_XLs.tsv"
+            #new_filename = ""#f"{}_proteins{}_XLs.tsv"
+
+            ptm_paths = []
 
             #path of corresponding protein file
-            protein_path = workspace_path / "result-files" /f"{new_filename}"
+            for p in selected_ptm_files: 
+                ptm_paths.append(workspace_path / "result-files" /f"{p}")
 
             #if file exist
-            if protein_path.exists():
+            if ptm_paths:
                 #st.write("PRTs Table")
                 #take list of dataframs different results 
-                PRTs_section= read_protein_table(protein_path)
+                #PRTs_section= 
                 #from 1st dataframe PRTs_List; shown on page with download button
-                show_table(PRTs_section[0], f"{os.path.splitext(new_filename)[0]}_PRTS_list")
-            
-                #with PRTs Summary
-                with tabs_[2]:       
-                        #st.write("Protein summary")
-                        #from wnd dataframe PRTs_summary; shown on page with download button
-                        show_table(PRTs_section[2], f"{os.path.splitext(new_filename)[0]}_PRTS_summary")
-                
-                #with Crosslink efficiency
-                with tabs_[3]:
-                        #st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
-                        #from 3rd dataframe PRTs_efficiency
-                        prts_efficiency = PRTs_section[3]
+                for p in ptm_paths: 
+                    dfPTMraw = pd.read_csv(p, sep= "\t")
+                    dfPTM = dfPTMraw.head(50)
+                    show_table(dfPTM, f"{os.path.splitext(p)[0]}")
+                    #st.write(dfPTM.columns)
 
-                        #create crosslink efficiency plot
-                        efficiency_fig = go.Figure(data=[go.Bar(x=prts_efficiency["AA"], y=prts_efficiency["Crosslink efficiency"], marker_color='rgb(55, 83, 109)')])
-                        #update the layout of plot
-                        efficiency_fig.update_layout(
-                            #title='Crosslink efficiency',
-                            xaxis_title='Amino acids',
-                            yaxis_title='Crosslink efficiency (AA freq. / AA freq. in all CSMs)',
+                    
+                    #create crosslink efficiency plot
+                    PTM_fig = go.Figure(data=[go.Bar(x=dfPTM["Name"], y=dfPTM["Modified Peptides"], marker_color='rgb(55, 83, 109)')])
+                    #update the layout of plot
+                    PTM_fig.update_layout(
+                        title='PTM list',
+                        xaxis_title='Modifications',
+                            yaxis_title='Frequency',
                             font=dict(family='Arial', size=12, color='rgb(0,0,0)'),
                             paper_bgcolor='rgb(255, 255, 255)',
                             plot_bgcolor='rgb(255, 255, 255)'
                         )
-                        #show figure, with download
-                        show_fig(efficiency_fig, f"{os.path.splitext(new_filename)[0]}_efficiency")
-                        #show button of download table from where above plot came
-                        download_table(prts_efficiency, f"{os.path.splitext(new_filename)[0]}_efficiency")
+                    #show figure, with download
+                    show_fig(PTM_fig, f"{os.path.splitext(p)[0]}")
+                    #show button of download table from where above plot came
+                    #download_table(prts_efficiency, f"{os.path.splitext(p)}")
 
-                #with Precursor adducts summary
-                with tabs_[4]:
-                            #st.write("Precursor adduct summary")
-                            #show_table(PRTs_section[4])
-                            #from 4th dataframe mass_adducts efficiency
-                            precursor_summary = PRTs_section[4]
-
-                            #create mass adducts efficiency plot
-                            adducts_fig = go.Figure(data=[go.Pie(
-                                labels=precursor_summary["Precursor adduct:"],
-                                values=precursor_summary["PSMs(%)"],
-                                hoverinfo='label+percent',
-                                textinfo='label+percent',
-                                #title='Percentage of PSMs for Each Index Precursor'
-                            )])
-
-                            #show figure, with download
-                            show_fig(adducts_fig , f"{os.path.splitext(new_filename)[0]}_adduct_summary")
-                            #show button of download table from where above plot came
-                            download_table(precursor_summary, f"{os.path.splitext(new_filename)[0]}_adduct_summary")
 
             #if the same protein file not available
             else:
-                st.warning(f"{protein_path.name} file not exist in current workspace")
+                st.warning(f"{ptm_paths} file not exist in current workspace") 
 
-    _ ="""
-    tabs_ = st.tabs(["CSMs", "Proteins"])
-    if selected_file:
-        with tabs_[0]:
-            st.write("CSMs Table")
-            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_0.0100_XLs.idXML")
-            CSM_= readAndProcessIdXML(workspace_path / "result-files" /f"{selected_file}")
-            show_table(CSM_, os.path.splitext(selected_file)[0])
-
-        with tabs_[1]:
-            # Extracting components from the input filename
-            parts = selected_file.split('_')
-            prefix = '_'.join(parts[:-2])  # Joining all parts except the last two
-            perc_value = parts[-2]  # Extracting the percentage value
-
-            # Creating the new filename
-            new_filename = f"{prefix}_proteins{perc_value}_XLs.tsv"
-
-            #st.write("Path of selected file: ", workspace_path / "result-files" /f"{selected_file}_proteins0.0100_XLs.tsv")
-            protein_path = workspace_path / "result-files" /f"{new_filename}"
-
-            if protein_path.exists():
-                st.write("PRTs Table")
-                PRTs_section= read_protein_table(protein_path)
-                show_table(PRTs_section[0], f"{os.path.splitext(new_filename)[0]}_PRTS_list")
-
-                st.write("Protein summary")
-                show_table(PRTs_section[2], f"{os.path.splitext(new_filename)[0]}_PRTS_summary")
-
-                col1, col2 = st.columns(2)
-
-                # Display the plots in the columns
-                with col1:
-                    st.write("Crosslink efficiency (AA freq. / AA freq. in all CSMs)")
-                    #show_table(PRTs_section[3])
-
-                    prts_efficiency = PRTs_section[3]
-        
-                    efficiency_fig = go.Figure(data=[go.Bar(x=prts_efficiency["AA"], y=prts_efficiency["Crosslink efficiency"], marker_color='rgb(55, 83, 109)')])
-
-                    efficiency_fig.update_layout(
-                        #title='Crosslink efficiency',
-                        xaxis_title='Amino acids',
-                        yaxis_title='Crosslink efficiency',
-                        font=dict(family='Arial', size=12, color='rgb(0,0,0)'),
-                        paper_bgcolor='rgb(255, 255, 255)',
-                        plot_bgcolor='rgb(255, 255, 255)'
-                    )
-
-                    show_fig(efficiency_fig, f"{os.path.splitext(new_filename)[0]}_efficiency")
-                    download_table(prts_efficiency, f"{os.path.splitext(new_filename)[0]}_efficiency")
-
-                with col2:
-                    st.write("Precursor adduct summary")
-                    #show_table(PRTs_section[4])
-
-                    #print(PRTs_section[4])
-                    precursor_summary = PRTs_section[4]
-
-                    adducts_fig = go.Figure(data=[go.Pie(
-                        labels=precursor_summary["Precursor adduct:"],
-                        values=precursor_summary["PSMs(%)"],
-                        hoverinfo='label+percent',
-                        textinfo='label+percent',
-                        #title='Percentage of PSMs for Each Index Precursor'
-                    )])
-
-                    show_fig(adducts_fig , f"{os.path.splitext(new_filename)[0]}_adduct_summary")
-                    download_table(precursor_summary, f"{os.path.splitext(new_filename)[0]}_adduct_summary")
-
-            else:
-                st.warning(f"{protein_path.name} file not exist in current workspace")
-            """
 #with "Result files" 
 with tabs[1]:
     #make sure to load all results example files

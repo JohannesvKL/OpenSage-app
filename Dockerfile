@@ -10,9 +10,6 @@
 # Use an ARM64-compatible base image
 #FROM --platform=linux/arm64 ubuntu:22.04 AS setup-build-system
 
-# Use an ARM64-compatible base image
-#Try doing it platform independent next 
-#FROM --platform=linux/arm64 ubuntu:22.04 AS setup-build-system
 FROM ubuntu:22.04 AS setup-build-system
 
 ARG OPENMS_REPO=https://github.com/JohannesvKL/OpenMSOpenSageSearch
@@ -33,24 +30,20 @@ RUN apt-get -y update && apt-get install -y --no-install-recommends --no-install
     rustc cargo \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install mamba for ARM64
-ENV PATH="/root/mambaforge/bin:${PATH}"
-RUN wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-aarch64.sh \
-    && bash Mambaforge-Linux-aarch64.sh -b \
-    && rm -f Mambaforge-Linux-aarch64.sh
+# Download and install Miniconda for x86_64
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-# Setup mamba environment
+# Setup conda environment
 COPY environment.yml ./environment.yml
-RUN mamba env create -f environment.yml 
-SHELL ["mamba", "run", "-n", "streamlit-env", "/bin/bash", "-c"]
+RUN conda env create -f environment.yml 
+SHELL ["conda", "run", "-n", "streamlit-env", "/bin/bash", "-c"]
 
-# Install up-to-date cmake via mamba and packages for pyOpenMS build
-RUN mamba install cmake \
-    && pip install setuptools nose Cython autowrap pandas numpy pytest\
-    && pip install --force-reinstall numpy==1.26.4  \
-    && pip install captcha 
-
-
+# Install up-to-date cmake via conda and packages for pyOpenMS build
+RUN conda install cmake \
+    && pip install setuptools nose Cython autowrap pandas numpy pytest
 
 # Clone OpenMS branch and the associated contrib+thirdparties+pyOpenMS-doc submodules
 RUN git clone --recursive --depth=1 -b ${OPENMS_BRANCH} --single-branch ${OPENMS_REPO} /OpenMS
@@ -85,14 +78,9 @@ RUN cmake -DCMAKE_BUILD_TYPE='Release' \
 
 # Build TOPP tools and pyOpenMS
 RUN make -j4 TOPP
-#RUN make -j4 pyopenms
 
 #RUN pip install boost 
 #RUN pip install pyopenms
-
-# Install pyOpenMS
-#WORKDIR /openms-build/pyOpenMS
-#RUN pip install dist/*.whl
 
 # Prepare OpenMS directories
 WORKDIR /
@@ -107,9 +95,13 @@ ENV PATH="/openms/bin/:${PATH}"
 ENV LD_LIBRARY_PATH="/openms/lib/:${LD_LIBRARY_PATH}"
 ENV OPENMS_DATA_PATH="/openms/share/"
 
+
 # Prepare and run streamlit app
 FROM compile-openms AS run-app
 WORKDIR /app
+
+COPY --from=compile-openms /sage/target/release/sage /usr/local/bin/
+ENV PATH="/usr/local/bin:${PATH}"
 
 # Copy Streamlit app files
 COPY app.py /app/
@@ -119,10 +111,9 @@ COPY example-data/ /app/example-data/
 COPY pages/ /app/pages/
 COPY .streamlit/config.toml /app/.streamlit/
 
-# Copy Sage binary
-COPY --from=compile-openms /sage/target/release/sage /usr/local/bin/
+
 
 EXPOSE ${PORT}
 
 # Run Streamlit app
-CMD ["mamba", "run", "--no-capture-output", "-n", "streamlit-env", "streamlit", "run", "app.py"]
+CMD ["conda", "run", "--no-capture-output", "-n", "streamlit-env", "streamlit", "run", "app.py"]

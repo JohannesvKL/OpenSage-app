@@ -8,21 +8,21 @@ params = page_setup(page="main")
 def main():
     st.markdown(
         """
-        # OpenMS NuXL App
-        ### NuXL: A specialized protein nucleic-acid crosslink search engine
-        Welcome to the OpenMS NuXL App, a web application for the NuXL protein-nucleic acid search engine built using [OpenMS](https://openms.de/) and [pyOpenMS](https://pyopenms.readthedocs.io/en/latest/).
+        # OpenMS SageAdapter App
+        ### SageAdapter: Integrating the proteomics search engine into the OpenMS framework. 
+        Welcome to the OpenMS SageAdapter App, a web application for the Sage search engine, built using [OpenMS](https://openms.de/) and [pyOpenMS](https://pyopenms.readthedocs.io/en/latest/).
 
         """
     )
-    st.image("assets/NuXL_image.png")
+    #st.image("assets/NuXL_image.png")
     st.markdown(
         """
-        Here, we take the NuXL search engine in a simple and easy graphical user interface. NuXL is a dedicated software package designed for the analysis of XL-MS (cross-linking mass spectrometry) data obtained from UV and chemically crosslinked protein–RNA/DNA samples. 
-        This powerful tool allows for reliable, FDR-controlled assignment of protein–nucleic acid crosslinking sites in samples treated with UV light or chemical crosslinkers. It offers user-friendly matched spectra visualization, including ion annotations.[more](https://ssp2022.com/index.php/timetable/event/henning-urlaub/) 
-
+        In this web-app the Sage search engine is presented in a simple and easy-to-use graphical interface. Sage is a fast and reliable proteomics search engine for the anaylsis of MS data, for more see: (link to Sage here). 
+        This tool allows for annotation of various ions, fast discovery of PTMs, and FDR-filtering of results! 
         """
     )
     #In docker, OpenMS-app (executable) can be downloadable from github
+    #TODO: make zip possible 
     if Path("OpenMS-NuXL.zip").exists():
         st.markdown(
             """

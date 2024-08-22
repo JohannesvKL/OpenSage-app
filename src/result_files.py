@@ -337,7 +337,7 @@ def readAndProcessIdXML(input_file, top=1):
                 accessions = ';'.join([s.decode() for s in h.extractProteinAccessionsSet()])
 
                 #get peak annotations
-                peak_annotation = h.getPeakAnnotations()
+                peak_annotation = h.getPeakAnnotations() 
                 intensity_values_ = []  # To store peak.intensity values
                 mz_values_ = []  # To store peak.mz values
                 annotations_ = [] # To store ions annotations
@@ -346,6 +346,7 @@ def readAndProcessIdXML(input_file, top=1):
                     intensity_values_.append(str(peak.intensity))
                     mz_values_.append(str(peak.mz))
                     annotations_.append(str(peak.annotation))
+                    #st.write(intensity_values_, mz_values_, annotations_)
 
                 # change list in to string with , seperate
                 intensities = ",".join(intensity_values_)

@@ -3,9 +3,10 @@ name: streamlit-env
 channels:
   - conda-forge
   - defaults
+  - bioconda
 dependencies:
-  - python=3.11
-  - numpy=1.26
+  - python
+  - numpy
   - scipy
   - matplotlib
   - pandas
@@ -13,6 +14,8 @@ dependencies:
   - streamlit
   - plotly
   - pip
+  - captcha 
+  - pyopenms 
   - pip:
     - streamlit-plotly-events
     - streamlit-aggrid

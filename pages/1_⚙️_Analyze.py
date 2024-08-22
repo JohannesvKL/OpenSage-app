@@ -11,6 +11,7 @@ import threading
 from src.captcha_ import *
 from src.run_subprocess import *
 
+
 params = page_setup()
 
 # If run in hosted mode, show captcha as long as it has not been solved
@@ -56,9 +57,9 @@ config_path = os.path.join(current_dir, 'assets', 'OpenMS_NuXL.ini')
         #"restrictions": restrictions_list
         # })
 NuXL_config=ini2dict(config_path, sections)
-
-#print(NuXL_config.keys())
-#print(NuXL_config["precursor_mass_tolerance_left"])
+st.write("Passed ini2dict")
+#st.write(NuXL_config.keys())
+#st.write(NuXL_config["precursor_mass_tolerance_left"])
 
 
 # make sure "selected-mzML-files" is in session state
@@ -89,7 +90,7 @@ if 'Trypsin' in NuXL_config['enzyme']['restrictions']:
 with st.form("fasta-upload", clear_on_submit=False):
 
     # selected mzML file from mzML files list
-    selected_mzML_file = st.selectbox(
+    selected_mzML_file = st.multiselect(
         "choose mzML file",
         [item for item in mzML_files_ if not item.endswith(".csv")]
         ,
@@ -105,8 +106,9 @@ with st.form("fasta-upload", clear_on_submit=False):
     )
 
     # take full path of mzML file
-    if selected_mzML_file:
-        mzML_file_path = str(Path(st.session_state.workspace, "mzML-files", selected_mzML_file))
+    mzML_file_paths = []
+    for mzml in selected_mzML_file:
+        mzML_file_paths.append(str(Path(st.session_state.workspace, "mzML-files", mzml)))
 
     # take full path of fasta file
     if selected_fasta_file:
@@ -201,21 +203,58 @@ with st.form("fasta-upload", clear_on_submit=False):
 
     with cols[1]:
         #scoring  = st.selectbox('select the scoring method',NuXL_config['scoring']['restrictions'], help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'])
-        scoring = cols[1].radio(
-        "select the scoring method",
-        [NuXL_config['scoring']['restrictions'][1], NuXL_config['scoring']['restrictions'][0]],
-        help=NuXL_config['scoring']['description'] + " default: "+ NuXL_config['scoring']['default'],
-        key="scoring"
-        )
+        psm_scores = str(st.number_input('Report PSMs', value = 2))
+        if int(peptide_min) < 1:
+            st.error("Length must be a positive integer greater than 0")
+
+    cols=st.columns(2)
+
+    with cols[0]: 
+        cols_=st.columns(3)
+        with cols_[0]:
+            Docker_or_not = bool(st.checkbox(label = "Click if running in Docker, leave unchecked if not"))
+        with cols_[1]:
+            Wide_window_mode = bool(st.checkbox(label = "Click if wide window mode should be enabled, leave unchecked if not (Warning: only check if absolutely sure!)"))
+        with cols_[2]: 
+            Predict_rt = bool(st.checkbox(label = "Check if retention time should be predicted, leave unchecked if not"))
+    with cols[1]: 
+         with cols_[0]:
+             Annotate_TF = bool(st.checkbox(label = "Check if annotation should be produced, leave unchecked if not"))
+         with cols_[1]:
+             Deisotope = bool(st.checkbox(label = "Check if deisotoping should be done, leave unchecked if not"))
+         with cols_[2]:
+             Chimera = bool(st.checkbox(label = "Check if chimera mode should be enabled, leave unchecked if not"))
+        
  
 # out file path
 result_dir: Path = Path(st.session_state.workspace, "result-files")
 
 # create same output file path name as input file path
-mzML_file_name = os.path.basename(mzML_file_path)
-protocol_name = os.path.splitext(mzML_file_name)[0]
+mzML_file_paths_abs = []
+for mzmlfp in mzML_file_paths: 
+    mzML_file_paths_abs.append(os.path.abspath(mzmlfp))
+
+mzML_file_names = []
+for mzmlfp in mzML_file_paths_abs: 
+    os.path.basename(mzmlfp)
+    mzML_file_names.append(os.path.basename(mzmlfp))
+    
+
+protocol_names = []
+for mzmlfn in mzML_file_names: 
+    protocol_names.append(os.path.splitext(mzmlfn)[0])
+
+protocol_name = ''.join(protocol_names)
 result_path = os.path.join(result_dir, protocol_name + ".idXML")
 
+
+#st.write(''.join(mzML_file_names))
+#st.write(result_path)
+#st.write(mzML_file_names)
+#st.write(database_file_path)
+
+#st.write(os.path.isfile(mzML_file_path))
+#st.write(os.path.isfile(database_file_path))
 ##################################### NuXL command (subprocess) ############################
 
 # result dictionary to capture output of subprocess
@@ -234,7 +273,7 @@ def terminate_subprocess():
 
 # run analysis 
 if cols[0].form_submit_button("Run-analysis", type="primary"):
-
+    st.write("Button reached")
     # To terminate subprocess and clear form
     if st.button("Terminate/Clear", key="terminate-button", type="secondary"):
         #terminate subprocess
@@ -243,37 +282,72 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
         #clear form
         st.experimental_rerun() 
     
-    sage_exec = "/Users/johannes/Desktop/openminded-sagews/sage/target/release"
-    SageAdapter = "/Users/johannes/openms-development/openms_build/bin"
+    
+    #SageAdapter = "/Users/johannes/openms-development/openms_build/bin"
+
     # with st.spinner("Running analysis... Please wait until analysis done 😑"): #without status/ just spinner button
     with st.status("Running analysis... Please wait until analysis done 😑"):
+        st.write("Debug check?")
+        #st.write(' '.join(mzML_file_paths))
+
         # If session state is local
         if st.session_state.location == "local":
-
+            st.write("local")
             # If local in current directory of app  like bin and percolator folder
             #OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
             #perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
+            SageAdapter_exec = os.path.join(os.getcwd(),'bin', 'SageAdapter')
+            #sage_exec = "/Users/johannes/Desktop/openminded-sagews/sage/target/release"
+            st.write(os.listdir(sage_exec))
+            st.write(SageAdapter_exec)
             
-            
-            args = [SageAdapter, "-in", mzML_file_path, "-database", database_file_path, "-out", result_path,
+            args = [SageAdapter_exec, "-in"]
+            args.extend(mzML_file_paths)
+            args.extend([ "-database", database_file_path, "-out", result_path,
                          "-precursor_tol_left",  Precursor_MT_left, "-precursor_tol_right", Precursor_MT_right, "-precursor_tol_unit",  Precursor_MT_unit,
                         "-fragment_tol_left",  Fragment_MT_left, "-fragment_tol_right", Fragment_MT_right , "-fragment_tol_unit",  Fragment_MT_unit,
-                        "min_len", peptide_min, "max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
-                        "max_variable_mods", Variable_max_per_peptide, "-sage_executable", sage_exec
-                        ]
+                        "-min_len", peptide_min, "-max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
+                        "-max_variable_mods", Variable_max_per_peptide,"-Annotate_matches",str(Annotate_TF), "-report_psms",str(psm_scores),"-deisotope", str(Deisotope), "-chimera", str(Chimera),"-predict_rt",str(Predict_rt), 
+                        "-sage_executable", sage_exec
+                        ])
 
             #args.extend(["-percolator_executable", perc_exec])
-
+ 
         # If session state is online/docker
         else:     
 
-            # In docker it executable on path            
-            args = ["SageAdapter", "-in", mzML_file_path, "-database", database_file_path, "-out", result_path,
+            # In docker it executable on path   
+            st.write(st.session_state.location)
+            # If local in current directory of app  like bin and percolator folder
+            #OpenNuXL_exec = os.path.join(os.getcwd(),'bin', 'OpenNuXL')
+            #perc_exec = os.path.join(os.getcwd(), 'Percolator', 'percolator.exe') 
+            SageAdapter_exec = os.path.join(os.getcwd(),'bin', 'SageAdapter')
+            sage_exec = "/Users/johannes/Desktop/openminded-sagews/sage/target/release/sage"
+            st.write(SageAdapter_exec)     
+            #Change back for docker later to just SageAdapter and remove 
+            #     
+            if Docker_or_not: 
+                args = ["SageAdapter", "-in"]
+                args.extend(mzML_file_paths)
+                args.extend([ "-database", database_file_path, "-out", result_path,
                          "-precursor_tol_left",  Precursor_MT_left, "-precursor_tol_right", Precursor_MT_right, "-precursor_tol_unit",  Precursor_MT_unit,
                         "-fragment_tol_left",  Fragment_MT_left, "-fragment_tol_right", Fragment_MT_right , "-fragment_tol_unit",  Fragment_MT_unit,
-                        "min_len", peptide_min, "max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
-                        "max_variable_mods", Variable_max_per_peptide, "-sage_executable", sage_exec
-                        ]
+                        "-min_len", peptide_min, "-max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
+                        "-max_variable_mods", Variable_max_per_peptide,"-Annotate_matches",str(Annotate_TF), "-report_psms",str(psm_scores),"-deisotope", str(Deisotope), "-chimera", str(Chimera),"-predict_rt",str(Predict_rt)
+                        ])
+            else: 
+                args = [SageAdapter_exec, "-in"]
+                args.extend(mzML_file_paths)
+                args.extend([ "-database", database_file_path, "-out", result_path,
+                         "-precursor_tol_left",  Precursor_MT_left, "-precursor_tol_right", Precursor_MT_right, "-precursor_tol_unit",  Precursor_MT_unit,
+                        "-fragment_tol_left",  Fragment_MT_left, "-fragment_tol_right", Fragment_MT_right , "-fragment_tol_unit",  Fragment_MT_unit,
+                        "-min_len", peptide_min, "-max_len",peptide_max, "-missed_cleavages",Missed_cleavages, "-enzyme", Enzyme,
+                        "-max_variable_mods", Variable_max_per_peptide,"-Annotate_matches",str(Annotate_TF), "-report_psms",str(psm_scores),"-deisotope", str(Deisotope), "-chimera", str(Chimera),"-predict_rt",str(Predict_rt), 
+                        "-sage_executable", sage_exec
+                        ])
+            #TODO: add options for annotation etc. 
+            
+
         
         # If variable modification provided
         if variable_modification: 
@@ -293,7 +367,7 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
         # st.code(message)
 
         # run subprocess command
-        print(st.session_state.location)
+        st.write(st.session_state.location)
         run_subprocess(args, variables, result_dict)
         
 
@@ -305,10 +379,10 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
 
     # if run_subprocess success (no need if not success because error will show/display in run_subprocess command)
     if result_dict["success"]:
-        print("Great Success! I liek! ")
+        st.write("Great Success! ")
         # add .mzML.ambigious_masses.csv in result directory 
         #add_this_result_file(f"{protocol_name}.mzML.ambigious_masses.csv", Path(st.session_state.workspace, "mzML-files"))
-        add_this_result_file("OutputTable.tsv", Path(st.session_state.workspace, "output-files"))
+        #add_this_result_file("OutputTable.tsv", Path("../app/"))
         
         # remove .mzML.ambigious_masses.csv from mzML directory
         #remove_this_mzML_file(f"{protocol_name}.mzML.ambigious_masses.csv")
@@ -320,9 +394,11 @@ if cols[0].form_submit_button("Run-analysis", type="primary"):
 
         # all result files in result-dir
         All_files = [f.name for f in sorted(result_dir.iterdir())]
+        st.write(All_files)
 
         # filtered out all current run file from all resul-dir files
-        current_analysis_files = [s for s in All_files if protocol_name in s]
+        #current_analysis_files = [s for s in All_files if protocol_name in s]
+        current_analysis_files = [s for s in All_files]
 
         # add list of files to dataframe
         df = pd.DataFrame({"output files ": current_analysis_files})
